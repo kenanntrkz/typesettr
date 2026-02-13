@@ -37,11 +37,12 @@ KRİTİK KURALLAR:
    - Format:
    \\begin{figure}[htbp]
      \\centering
-     \\includegraphics[width=0.8\\textwidth]{images/DOSYAADI}
+     \\includegraphics[width=0.8\\textwidth]{DOSYAADI}
      \\caption{Açıklama}
      \\label{fig:benzersiz-id}
    \\end{figure}
-   - KRİTİK: DOSYAADI'nı Görseller listesindeki gerçek dosya adıyla değiştir (örn: images/img1.png)
+   - KRİTİK: DOSYAADI sadece dosya adı olmalı, "images/" prefix'i EKLEME (örn: img1.png, img2.jpg)
+   - graphicspath zaten ayarlı, sadece dosya adını yaz
 5. Tablolar:
    \\begin{table}[htbp]
      \\centering
@@ -94,7 +95,7 @@ KRİTİK KURALLAR:
     for (const img of chapter.images) {
       const filename = img._resolvedName || `${img.id}.png`;
       const caption = img.caption || img.alt || '';
-      contentParts.push(`- Dosya: images/${filename}, Açıklama: ${caption}`);
+      contentParts.push(`- Dosya: ${filename}, Açıklama: ${caption}`);
     }
   }
 
