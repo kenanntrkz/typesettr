@@ -122,6 +122,23 @@ KRİTİK KURALLAR:
     // Strip markdown code fences if AI wraps output
     latex = latex.replace(/^```(?:latex|tex)?\s*\n?/g, '').replace(/\n?```\s*$/g, '').trim();
 
+    // Post-process: fix image paths — remove images/ prefix if AI added it
+    latex = latex.replace(/\\includegraphics(\[[^\]]*\])?\{images\//g, '\\includegraphics$1{');
+
+    // Post-process: replace any remaining [GORSEL: imgX] placeholders that AI didn't handle
+    if (chapter.images && chapter.images.length > 0) {
+      for (const img of chapter.images) {
+        const filename = img._resolvedName || `${img.id}.png`;
+        const caption = img.caption || img.alt || '';
+        const placeholder = `[GORSEL: ${img.id}]`;
+        if (latex.includes(placeholder)) {
+          const figureBlock = `\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.8\\textwidth]{${filename}}\n  \\caption{${caption}}\n  \\label{fig:${img.id}}\n\\end{figure}`;
+          latex = latex.replace(placeholder, figureBlock);
+          logger.info(`Replaced unreplaced placeholder ${placeholder} with figure block`);
+        }
+      }
+    }
+
     logger.info(`Chapter ${chapterNum} LaTeX generated (${latex.length} chars)`);
     return latex;
   } catch (error) {

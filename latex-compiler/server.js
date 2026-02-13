@@ -57,10 +57,19 @@ async function handleJsonCompile(req, res) {
       for (const img of req.body.images) {
         if (img.name && img.data) {
           const imgPath = path.join(imagesDir, path.basename(img.name));
-          fs.writeFileSync(imgPath, Buffer.from(img.data, 'base64'));
+          const imgBuffer = Buffer.from(img.data, 'base64');
+          fs.writeFileSync(imgPath, imgBuffer);
+          console.log(`[${new Date().toISOString()}] Image written: ${imgPath} (${imgBuffer.length} bytes)`);
+        } else {
+          console.log(`[${new Date().toISOString()}] Skipped image: name=${img.name}, data=${img.data ? 'present' : 'MISSING'}`);
         }
       }
       console.log(`[${new Date().toISOString()}] Wrote ${req.body.images.length} images to ${imagesDir}`);
+      // List actual files for verification
+      const writtenFiles = fs.readdirSync(imagesDir);
+      console.log(`[${new Date().toISOString()}] Images dir contents: ${writtenFiles.join(', ')}`);
+    } else {
+      console.log(`[${new Date().toISOString()}] No images in request payload`);
     }
 
     const maxTime = parseInt(process.env.MAX_COMPILE_TIME) || 120;

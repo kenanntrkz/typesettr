@@ -116,8 +116,17 @@ async function processTypesettingJob(job) {
 
     logger.info(`LaTeX generated: ${latexCode.length} chars`);
 
+    // ── SAFETY NET: Fix image paths before compilation ──
+    // 1. Remove images/ prefix from \includegraphics (graphicspath handles it)
+    let finalLatexCode = latexCode.replace(/\\includegraphics(\[[^\]]*\])?\{images\//g, '\\includegraphics$1{');
+    // 2. Remove any remaining [GORSEL: ...] placeholders that weren't replaced
+    finalLatexCode = finalLatexCode.replace(/\[GORSEL:\s*\w+\]/g, '');
+    if (finalLatexCode !== latexCode) {
+      logger.info('Safety net: fixed image paths or removed unreplaced placeholders in final LaTeX');
+    }
+
     await logStep(projectId, 'latex_generation', 'completed', {
-      latexLength: latexCode.length
+      latexLength: finalLatexCode.length
     });
     notifyStep(projectId, 'latex_generated');
 
@@ -129,7 +138,7 @@ async function processTypesettingJob(job) {
     await logStep(projectId, 'compiling', 'started');
 
     const compileResult = await compileWithRetry(
-      latexCode,
+      finalLatexCode,
       images,
       projectId,
       async (code, errorLog) => {
@@ -203,7 +212,7 @@ async function processTypesettingJob(job) {
     });
 
     // Upload LaTeX source as zip
-    const latexZipBuffer = await createLatexZip(latexCode, images);
+    const latexZipBuffer = await createLatexZip(finalLatexCode, images);
     const latexFilename = `${project.name || 'kitap'}_latex.zip`;
     const latexStoragePath = `projects/${projectId}/output/${latexFilename}`;
     const latexUrl = await fileService.uploadBuffer(projectId, latexZipBuffer, latexStoragePath, 'application/zip');
@@ -386,22 +395,39 @@ function prepareImages(parsedDoc) {
 
         // Convert data URI to buffer if needed
         if (!buffer && img.src && img.src.startsWith('data:')) {
-          const match = img.src.match(/^data:image\/(\w+);base64,(.+)$/s);
+          // Use [^;]+ instead of \w+ to match MIME subtypes with hyphens (x-emf, x-wmf, svg+xml etc.)
+          const match = img.src.match(/^data:image\/([^;]+);base64,(.+)$/s);
           if (match) {
-            ext = match[1] === 'jpeg' ? 'jpg' : match[1];
+            // Normalize extension: jpeg→jpg, x-emf→emf, x-wmf→wmf
+            ext = match[1].replace(/^x-/, '').replace('jpeg', 'jpg');
             buffer = Buffer.from(match[2], 'base64');
+            logger.info(`Image ${img.id}: converted data URI (type: image/${match[1]}, size: ${buffer.length} bytes)`);
+          } else {
+            logger.warn(`Image ${img.id}: data URI regex did not match: ${img.src.substring(0, 80)}...`);
           }
+        } else if (!buffer && img.src) {
+          logger.warn(`Image ${img.id}: no buffer and src is not a data URI (src: ${img.src.substring(0, 60)}...)`);
         }
 
         if (buffer && buffer.length > 0) {
+          // pdflatex only supports png, jpg, pdf — map other formats to png
+          const supportedExts = ['png', 'jpg', 'pdf'];
+          if (!supportedExts.includes(ext)) {
+            logger.warn(`Image ${img.id}: unsupported format '${ext}', treating as png`);
+            ext = 'png';
+          }
           const name = `${img.id || 'img' + globalIndex}.${ext}`;
           images.push({ name, buffer });
           // Store resolved filename back on the image object for AI reference
           img._resolvedName = name;
+          logger.info(`Image prepared: ${name} (${buffer.length} bytes)`);
+        } else {
+          logger.warn(`Image ${img.id}: no valid buffer, image will be skipped`);
         }
       }
     }
   }
+  logger.info(`prepareImages: ${images.length} images prepared from ${globalIndex} found`);
   return images;
 }
 
