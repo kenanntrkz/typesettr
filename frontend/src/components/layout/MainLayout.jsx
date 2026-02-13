@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { BookOpen, Plus, LogOut, Globe, User, ChevronDown } from 'lucide-react'
+import { BookOpen, Plus, LogOut, Globe, User, ChevronDown, Shield } from 'lucide-react'
 
 export default function MainLayout() {
   const { user, logout } = useAuthStore()
@@ -78,6 +78,12 @@ export default function MainLayout() {
                     <User className="w-4 h-4 mr-2" />
                     {t('nav.profile')}
                   </DropdownMenuItem>
+                  {(user?.role === 'admin' || user?.role === 'superadmin') && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')} className="cursor-pointer text-amber-600">
+                      <Shield className="w-4 h-4 mr-2" />
+                      Admin Panel
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600">
                     <LogOut className="w-4 h-4 mr-2" />

@@ -16,6 +16,8 @@ function User() {
     name: { type: DataTypes.STRING(255), allowNull: false, validate: { len: [1, 255] } },
     language: { type: DataTypes.STRING(2), defaultValue: 'tr', validate: { isIn: [['tr', 'en']] } },
     plan: { type: DataTypes.STRING(20), defaultValue: 'free', validate: { isIn: [['free', 'pro', 'enterprise']] } },
+    role: { type: DataTypes.STRING(20), defaultValue: 'user', validate: { isIn: [['user', 'admin', 'superadmin']] } },
+    is_banned: { type: DataTypes.BOOLEAN, defaultValue: false },
     projects_count: { type: DataTypes.INTEGER, defaultValue: 0 },
     email_verified: { type: DataTypes.BOOLEAN, defaultValue: false },
     verification_token: { type: DataTypes.STRING(255), allowNull: true },

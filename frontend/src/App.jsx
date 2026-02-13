@@ -16,6 +16,12 @@ import PrivacyPage from '@/pages/PrivacyPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import AdminLayout from '@/components/layout/AdminLayout'
+import AdminDashboardPage from '@/pages/admin/AdminDashboardPage'
+import AdminUsersPage from '@/pages/admin/AdminUsersPage'
+import AdminUserDetailPage from '@/pages/admin/AdminUserDetailPage'
+import AdminProjectsPage from '@/pages/admin/AdminProjectsPage'
+import AdminSystemPage from '@/pages/admin/AdminSystemPage'
 import { useAuthStore } from '@/stores/authStore'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
@@ -28,6 +34,14 @@ function ProtectedRoute({ children }) {
 function GuestRoute({ children }) {
   const token = useAuthStore((s) => s.token)
   if (token) return <Navigate to="/dashboard" replace />
+  return children
+}
+
+function AdminRoute({ children }) {
+  const token = useAuthStore((s) => s.token)
+  const user = useAuthStore((s) => s.user)
+  if (!token) return <Navigate to="/login" replace />
+  if (user?.role !== 'admin' && user?.role !== 'superadmin') return <Navigate to="/dashboard" replace />
   return children
 }
 
@@ -57,6 +71,15 @@ function App() {
           <Route path="/projects/new" element={<NewProjectPage />} />
           <Route path="/projects/:id" element={<ProjectDetailPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+        </Route>
+
+        {/* Admin */}
+        <Route element={<AdminRoute><AdminLayout /></AdminRoute>}>
+          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/users/:id" element={<AdminUserDetailPage />} />
+          <Route path="/admin/projects" element={<AdminProjectsPage />} />
+          <Route path="/admin/system" element={<AdminSystemPage />} />
         </Route>
 
         {/* 404 */}

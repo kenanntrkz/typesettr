@@ -136,6 +136,12 @@ async function login({ email, password }) {
     throw error;
   }
 
+  if (user.is_banned) {
+    const error = new Error('Account has been suspended');
+    error.status = 403;
+    throw error;
+  }
+
   const token = generateToken(user);
   const refreshToken = generateRefreshToken(user);
 

@@ -20,6 +20,7 @@ const projectRoutes = require('./routes/project.routes');
 const fileRoutes = require('./routes/file.routes');
 const typesetRoutes = require('./routes/typeset.routes');
 const coverRoutes = require("./routes/cover.routes");
+const adminRoutes = require('./routes/admin.routes');
 
 // Queue workers
 const { startWorker: startTypesetWorker, shutdown: shutdownTypesetQueue } = require('./queues/typeset.queue');
@@ -55,6 +56,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/typeset', typesetRoutes);
 app.use('/api/covers', coverRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ── Error Handling ───────────────────────────────────────
 app.use(notFoundHandler);

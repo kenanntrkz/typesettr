@@ -15,6 +15,10 @@ CREATE TABLE users (
 
   plan VARCHAR(20) DEFAULT 'free',
 
+  role VARCHAR(20) DEFAULT 'user',
+
+  is_banned BOOLEAN DEFAULT FALSE,
+
   projects_count INT DEFAULT 0,
 
   created_at TIMESTAMPTZ DEFAULT NOW(),
