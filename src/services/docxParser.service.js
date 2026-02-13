@@ -81,12 +81,20 @@ function parseHtmlStructure(html) {
       if (imgs.length > 0 && currentChapter) {
         imgs.each(function(i, img) {
           var $img = $(img);
+          var imgId = 'img' + (currentChapter.images.length + 1);
           currentChapter.images.push({
-            id: 'img' + (currentChapter.images.length + 1),
+            id: imgId,
             src: $img.attr('src') || '',
             alt: $img.attr('alt') || '',
             caption: $img.attr('alt') || ('Sekil ' + (currentChapter.images.length + 1))
           });
+          // Insert placeholder in content so AI knows where images belong
+          var placeholder = '\n[GORSEL: ' + imgId + ']\n';
+          if (currentSection) {
+            currentSection.content += placeholder;
+          } else {
+            currentChapter.content += placeholder;
+          }
         });
       }
       var content = $el.text().trim();

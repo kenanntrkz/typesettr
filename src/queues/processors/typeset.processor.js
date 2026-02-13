@@ -92,7 +92,18 @@ async function processTypesettingJob(job) {
     notifyStep(projectId, 'ai_analyzed');
 
     // ═══════════════════════════════════════════════════════
-    // STEP 3: LATEX CODE GENERATION
+    // STEP 3: PREPARE IMAGE ASSETS (moved before LaTeX gen)
+    // ═══════════════════════════════════════════════════════
+    await updateStep(projectId, 'preparing_assets', 30);
+    notifyStep(projectId, 'preparing_assets');
+
+    const images = prepareImages(parsedDoc);
+    logger.info(`Prepared ${images.length} images for compilation`);
+
+    notifyStep(projectId, 'assets_ready');
+
+    // ═══════════════════════════════════════════════════════
+    // STEP 4: LATEX CODE GENERATION
     // ═══════════════════════════════════════════════════════
     await updateStep(projectId, 'latex_generation', 35);
     notifyStep(projectId, 'latex_generation');
@@ -109,17 +120,6 @@ async function processTypesettingJob(job) {
       latexLength: latexCode.length
     });
     notifyStep(projectId, 'latex_generated');
-
-    // ═══════════════════════════════════════════════════════
-    // STEP 4: PREPARE IMAGE ASSETS
-    // ═══════════════════════════════════════════════════════
-    await updateStep(projectId, 'preparing_assets', 58);
-    notifyStep(projectId, 'preparing_assets');
-
-    const images = prepareImages(parsedDoc);
-    logger.info(`Prepared ${images.length} images for compilation`);
-
-    notifyStep(projectId, 'assets_ready');
 
     // ═══════════════════════════════════════════════════════
     // STEP 5: LATEX → PDF COMPILATION (with auto-retry)
@@ -371,18 +371,33 @@ async function generateFullLatexWithProgress(parsedDoc, plan, settings, coverDat
 
 /**
  * Extract images from parsed document as {name, buffer} array
+ * Converts data URI strings to binary buffers
  */
 function prepareImages(parsedDoc) {
   const images = [];
+  let globalIndex = 0;
+
   for (const chapter of parsedDoc.chapters) {
     if (chapter.images && chapter.images.length > 0) {
       for (const img of chapter.images) {
-        if (img.buffer) {
-          const ext = img.format || 'png';
-          images.push({
-            name: `${img.id || 'img_' + images.length}.${ext}`,
-            buffer: img.buffer
-          });
+        globalIndex++;
+        let buffer = img.buffer;
+        let ext = img.format || 'png';
+
+        // Convert data URI to buffer if needed
+        if (!buffer && img.src && img.src.startsWith('data:')) {
+          const match = img.src.match(/^data:image\/(\w+);base64,(.+)$/s);
+          if (match) {
+            ext = match[1] === 'jpeg' ? 'jpg' : match[1];
+            buffer = Buffer.from(match[2], 'base64');
+          }
+        }
+
+        if (buffer && buffer.length > 0) {
+          const name = `${img.id || 'img' + globalIndex}.${ext}`;
+          images.push({ name, buffer });
+          // Store resolved filename back on the image object for AI reference
+          img._resolvedName = name;
         }
       }
     }

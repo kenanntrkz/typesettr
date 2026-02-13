@@ -9,8 +9,15 @@ async function compileLatex(latexCode, images, projectId) {
   logger.info('Compiling LaTeX for project ' + projectId);
 
   try {
+    // Send images as base64 alongside LaTeX code
+    const imagePayload = (images || []).map(img => ({
+      name: img.name,
+      data: img.buffer.toString('base64')
+    }));
+
     const response = await axios.post(COMPILER_URL + '/compile', {
-      latex: latexCode
+      latex: latexCode,
+      images: imagePayload
     }, {
       headers: { 'Content-Type': 'application/json' },
       responseType: 'arraybuffer',

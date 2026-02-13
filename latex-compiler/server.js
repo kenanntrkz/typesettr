@@ -8,8 +8,8 @@ const { compileLaTeX, validateLaTeX } = require('./compiler');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// JSON body parser (for direct latex submission)
-app.use(express.json({ limit: '50mb' }));
+// JSON body parser (for direct latex submission + base64 images)
+app.use(express.json({ limit: '200mb' }));
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -49,6 +49,19 @@ async function handleJsonCompile(req, res) {
     fs.mkdirSync(jobDir, { recursive: true });
     const mainTexPath = path.join(jobDir, 'main.tex');
     fs.writeFileSync(mainTexPath, req.body.latex, 'utf-8');
+
+    // Write images from base64 payload to images/ directory
+    if (req.body.images && Array.isArray(req.body.images) && req.body.images.length > 0) {
+      const imagesDir = path.join(jobDir, 'images');
+      fs.mkdirSync(imagesDir, { recursive: true });
+      for (const img of req.body.images) {
+        if (img.name && img.data) {
+          const imgPath = path.join(imagesDir, path.basename(img.name));
+          fs.writeFileSync(imgPath, Buffer.from(img.data, 'base64'));
+        }
+      }
+      console.log(`[${new Date().toISOString()}] Wrote ${req.body.images.length} images to ${imagesDir}`);
+    }
 
     const maxTime = parseInt(process.env.MAX_COMPILE_TIME) || 120;
     const result = await compileLaTeX(jobDir, mainTexPath, maxTime);

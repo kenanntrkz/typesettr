@@ -31,12 +31,17 @@ KRİTİK KURALLAR:
 2. Alt başlıklar: \\section{...}, \\subsection{...}
 3. Paragraflar arasında boş satır bırak
 4. Görseller:
+   - Metin içinde [GORSEL: imgX] placeholder'ları göreceksin
+   - Her placeholder'ı, aşağıda verilen Görseller listesindeki doğru dosya adıyla \\includegraphics komutuyla değiştir
+   - Görseli metnin akışında placeholder'ın bulunduğu yere yerleştir
+   - Format:
    \\begin{figure}[htbp]
      \\centering
      \\includegraphics[width=0.8\\textwidth]{images/DOSYAADI}
      \\caption{Açıklama}
      \\label{fig:benzersiz-id}
    \\end{figure}
+   - KRİTİK: DOSYAADI'nı Görseller listesindeki gerçek dosya adıyla değiştir (örn: images/img1.png)
 5. Tablolar:
    \\begin{table}[htbp]
      \\centering
@@ -81,6 +86,15 @@ KRİTİK KURALLAR:
     contentParts.push('\nAlt Başlıklar:');
     for (const sub of chapter.subSections) {
       contentParts.push(`\n--- ${sub.title} ---\n${sub.content || ''}`);
+    }
+  }
+
+  if (chapter.images && chapter.images.length > 0) {
+    contentParts.push('\nGörseller (bu bölüme ait, metin içinde uygun yerlere yerleştir):');
+    for (const img of chapter.images) {
+      const filename = img._resolvedName || `${img.id}.png`;
+      const caption = img.caption || img.alt || '';
+      contentParts.push(`- Dosya: images/${filename}, Açıklama: ${caption}`);
     }
   }
 
