@@ -24,7 +24,6 @@ services:
       - .env
     volumes:
       - ./uploads:/app/uploads
-      - ./src:/app/src
     networks:
       - typesettr-net
     restart: unless-stopped
@@ -108,7 +107,7 @@ services:
     image: nginx:alpine
     container_name: typesettr-frontend
     ports:
-      - "8090:80"
+      - "8080:80"
     volumes:
       - ./frontend/dist:/usr/share/nginx/html:ro
       - ./frontend-nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
