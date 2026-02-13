@@ -38,11 +38,12 @@ export default function AdminAnalyticsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setLoading(true)
+    let active = true
     adminAPI.stats(period)
-      .then(res => setStats(res.data.data))
+      .then(res => { if (active) setStats(res.data.data) })
       .catch(() => {})
-      .finally(() => setLoading(false))
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
   }, [period])
 
   if (loading && !stats) {

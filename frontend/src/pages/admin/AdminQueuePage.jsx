@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { adminAPI } from '@/services/adminApi'
 import { Loader2, RefreshCw, RotateCcw, Trash2, Clock, Play, CheckCircle, XCircle, Pause } from 'lucide-react'
 
@@ -20,7 +20,7 @@ export default function AdminQueuePage() {
   const [jobStatus, setJobStatus] = useState('failed')
   const [loading, setLoading] = useState(true)
 
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
       const [statsRes, jobsRes] = await Promise.all([
@@ -31,9 +31,9 @@ export default function AdminQueuePage() {
       setJobs(jobsRes.data.data.jobs)
     } catch { /* */ }
     finally { setLoading(false) }
-  }
+  }, [jobStatus])
 
-  useEffect(() => { fetchAll() }, [jobStatus])
+  useEffect(() => { fetchAll() }, [fetchAll])
 
   const handleRetry = async (jobId) => {
     try { await adminAPI.retryJob(jobId); fetchAll() }
