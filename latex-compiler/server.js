@@ -3,6 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const { execSync } = require('child_process');
 const { compileLaTeX, validateLaTeX } = require('./compiler');
 
 const app = express();
@@ -72,6 +73,12 @@ async function handleJsonCompile(req, res) {
       console.log(`[${new Date().toISOString()}] No images in request payload`);
     }
 
+    // Convert unsupported image formats (EMF, WMF, BMP, TIFF, GIF) to PNG
+    const imagesDir = path.join(jobDir, 'images');
+    if (fs.existsSync(imagesDir)) {
+      convertUnsupportedImages(imagesDir);
+    }
+
     const maxTime = parseInt(process.env.MAX_COMPILE_TIME) || 120;
     const result = await compileLaTeX(jobDir, mainTexPath, maxTime);
 
@@ -122,6 +129,54 @@ async function handleMultipartCompile(req, res) {
     res.status(500).json({ success: false, error: error.message });
   } finally {
     setTimeout(() => { fs.rm(jobDir, { recursive: true, force: true }, () => {}); }, 5000);
+  }
+}
+
+/**
+ * Convert unsupported image formats to PNG using ImageMagick.
+ * Uses magic bytes detection because files might be named .png but contain EMF/WMF data.
+ * pdflatex only supports: PNG, JPG, PDF
+ */
+function convertUnsupportedImages(imagesDir) {
+  const files = fs.readdirSync(imagesDir);
+
+  for (const file of files) {
+    const filePath = path.join(imagesDir, file);
+    const buf = fs.readFileSync(filePath);
+
+    // Check magic bytes to determine actual format
+    const isPNG = buf.length > 4 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47;
+    const isJPEG = buf.length > 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF;
+    const isPDF = buf.length > 4 && buf.toString('ascii', 0, 4) === '%PDF';
+
+    if (isPNG || isJPEG || isPDF) {
+      console.log(`[${new Date().toISOString()}] ${file}: valid format (${isPNG ? 'PNG' : isJPEG ? 'JPEG' : 'PDF'})`);
+      continue;
+    }
+
+    // Unknown/unsupported format — need to convert to PNG
+    console.log(`[${new Date().toISOString()}] ${file}: not a valid PNG/JPEG/PDF (magic: ${buf.slice(0, 4).toString('hex')}), converting...`);
+
+    // Write original to temp file with detected extension for ImageMagick
+    const tmpPath = filePath + '.original';
+    const outputPath = filePath.replace(/\.[^.]+$/, '') + '.png';
+    fs.renameSync(filePath, tmpPath);
+
+    try {
+      execSync(`convert "${tmpPath}" "${outputPath}"`, { timeout: 30000 });
+      fs.unlinkSync(tmpPath);
+      // If the original file was not .png, remove it and ensure .png exists
+      if (filePath !== outputPath && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      console.log(`[${new Date().toISOString()}] Converted ${file} → ${path.basename(outputPath)}`);
+    } catch (err) {
+      console.warn(`[${new Date().toISOString()}] ImageMagick convert failed for ${file}: ${err.message}`);
+      // Restore original file
+      if (fs.existsSync(tmpPath)) {
+        fs.renameSync(tmpPath, filePath);
+      }
+    }
   }
 }
 

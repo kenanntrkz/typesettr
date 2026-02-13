@@ -1,7 +1,7 @@
 FROM texlive/texlive:latest
 
 RUN apt-get update && \
-    apt-get install -y curl poppler-utils && \
+    apt-get install -y curl poppler-utils imagemagick librsvg2-bin && \
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -28,6 +28,14 @@ COPY package.json ./
 RUN npm install --only=production
 COPY server.js compiler.js ./
 COPY templates/ ./templates/
+
+# Allow ImageMagick to convert all image formats
+RUN if [ -f /etc/ImageMagick-6/policy.xml ]; then \
+      sed -i 's/rights="none"/rights="read|write"/g' /etc/ImageMagick-6/policy.xml; \
+    fi && \
+    if [ -f /etc/ImageMagick-7/policy.xml ]; then \
+      sed -i 's/rights="none"/rights="read|write"/g' /etc/ImageMagick-7/policy.xml; \
+    fi
 
 RUN mkdir -p /tmp/latex-jobs && \
     useradd -m -s /bin/bash compiler && \

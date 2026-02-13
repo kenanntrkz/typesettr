@@ -1,15 +1,22 @@
-// Faz 2 — DOCX Parser Service (mammoth.js + cheerio)
+// Faz 2 — DOCX Parser Service (mammoth.js + cheerio + jszip for direct image extraction)
 const mammoth = require('mammoth');
 const cheerio = require('cheerio');
+const JSZip = require('jszip');
+const path = require('path');
 const logger = require('../utils/logger');
 
 async function parseDocx(input) {
-  const label = Buffer.isBuffer(input) ? 'Buffer(' + input.length + ' bytes)' : input;
-  logger.info('Parsing DOCX: ' + label);
+  const buffer = Buffer.isBuffer(input) ? input : require('fs').readFileSync(input);
+  logger.info('Parsing DOCX: Buffer(' + buffer.length + ' bytes)');
 
-  const mammothInput = Buffer.isBuffer(input) ? { buffer: input } : { path: input };
+  // ── STEP 1: Extract images directly from DOCX ZIP ──
+  // This catches ALL images including drawing objects that mammoth misses
+  const zipImages = await extractImagesFromZip(buffer);
+  logger.info('ZIP image extraction: found ' + zipImages.length + ' images in word/media/');
 
-  const result = await mammoth.convertToHtml(mammothInput, {
+  // ── STEP 2: Mammoth HTML conversion (for text structure) ──
+  const mammothImages = []; // Track images mammoth finds
+  const result = await mammoth.convertToHtml({ buffer }, {
     styleMap: [
       "p[style-name='Heading 1'] => h1:fresh",
       "p[style-name='Heading 2'] => h2:fresh",
@@ -20,7 +27,9 @@ async function parseDocx(input) {
     ],
     convertImage: mammoth.images.imgElement(function(image) {
       return image.read("base64").then(function(imageBuffer) {
-        return { src: 'data:' + image.contentType + ';base64,' + imageBuffer };
+        const contentType = image.contentType || 'image/png';
+        mammothImages.push({ contentType, size: imageBuffer.length });
+        return { src: 'data:' + contentType + ';base64,' + imageBuffer };
       });
     })
   });
@@ -30,10 +39,16 @@ async function parseDocx(input) {
   if (warnings.length > 0) {
     logger.warn('DOCX parse warnings: ' + JSON.stringify(warnings.slice(0, 5)));
   }
+  logger.info('Mammoth found ' + mammothImages.length + ' images via convertImage callback');
 
+  // ── STEP 3: Parse HTML structure ──
   const structure = parseHtmlStructure(html);
-  const metadata = calculateMetadata(structure);
 
+  // ── STEP 4: Merge ZIP images with mammoth-parsed images ──
+  // If mammoth found fewer images than the ZIP, inject the missing ones
+  mergeZipImages(structure, zipImages, mammothImages.length);
+
+  const metadata = calculateMetadata(structure);
   logger.info('DOCX parsed: ' + metadata.chapterCount + ' chapters, ' + metadata.wordCount + ' words, ' + metadata.imageCount + ' images');
 
   return {
@@ -41,6 +56,109 @@ async function parseDocx(input) {
     metadata,
     rawHtml: html
   };
+}
+
+/**
+ * Extract all images directly from DOCX ZIP structure (word/media/)
+ * This catches images that mammoth misses (drawing objects, shapes, EMF/WMF, etc.)
+ */
+async function extractImagesFromZip(buffer) {
+  const images = [];
+  try {
+    const zip = await JSZip.loadAsync(buffer);
+    const mediaFiles = [];
+
+    zip.forEach(function(relativePath, entry) {
+      if (relativePath.startsWith('word/media/') && !entry.dir) {
+        mediaFiles.push({ path: relativePath, entry });
+      }
+    });
+
+    // Sort by filename to maintain order (image1.png, image2.png, etc.)
+    mediaFiles.sort(function(a, b) { return a.path.localeCompare(b.path, undefined, { numeric: true }); });
+
+    for (const file of mediaFiles) {
+      try {
+        const data = await file.entry.async('nodebuffer');
+        const ext = path.extname(file.path).toLowerCase().replace('.', '');
+        const basename = path.basename(file.path);
+        images.push({
+          name: basename,
+          buffer: data,
+          format: ext,
+          size: data.length
+        });
+        logger.info('ZIP extracted: ' + basename + ' (' + data.length + ' bytes, format: ' + ext + ')');
+      } catch (err) {
+        logger.warn('Failed to extract ' + file.path + ': ' + err.message);
+      }
+    }
+  } catch (err) {
+    logger.error('ZIP extraction failed: ' + err.message);
+  }
+  return images;
+}
+
+/**
+ * Merge ZIP-extracted images into parsed structure
+ * If mammoth found fewer images, inject ZIP images as fallback
+ */
+function mergeZipImages(structure, zipImages, mammothImageCount) {
+  if (zipImages.length === 0) return;
+
+  // Count total mammoth-parsed images across all chapters
+  let parsedImageCount = 0;
+  for (const ch of structure.chapters) {
+    parsedImageCount += ch.images.length;
+  }
+
+  logger.info('Image merge: mammoth parsed ' + parsedImageCount + ' images, ZIP has ' + zipImages.length + ' images');
+
+  // If mammoth found all images, no need to inject
+  if (parsedImageCount >= zipImages.length) return;
+
+  // Mammoth missed images — inject ZIP images into the first/only chapter
+  // with buffer data so prepareImages can use them directly
+  const targetChapter = structure.chapters[0];
+  if (!targetChapter) return;
+
+  // Filter ZIP images to only supported formats for pdflatex
+  const supportedFormats = ['png', 'jpg', 'jpeg', 'pdf'];
+
+  // Clear mammoth images (they may be incomplete) and use ZIP images instead
+  logger.info('Replacing mammoth images with ZIP-extracted images for reliability');
+  // Remove existing image placeholders from content
+  for (const ch of structure.chapters) {
+    ch.content = (ch.content || '').replace(/\[GORSEL:\s*img\d+\]\n?/g, '');
+    for (const sub of ch.subSections || []) {
+      sub.content = (sub.content || '').replace(/\[GORSEL:\s*img\d+\]\n?/g, '');
+    }
+    ch.images = [];
+  }
+
+  let imageIndex = 0;
+  for (const zipImg of zipImages) {
+    const fmt = zipImg.format.toLowerCase();
+
+    // Skip unsupported formats (emf, wmf, etc.) — pdflatex can't render them
+    // But keep them anyway, prepareImages will handle format normalization
+    imageIndex++;
+    const imgId = 'img' + imageIndex;
+    targetChapter.images.push({
+      id: imgId,
+      src: '', // No data URI needed — we have the buffer directly
+      buffer: zipImg.buffer,
+      format: supportedFormats.includes(fmt) ? fmt : 'png',
+      alt: '',
+      caption: 'Görsel ' + imageIndex
+    });
+
+    // Add placeholder at the end of main content
+    targetChapter.content += '\n[GORSEL: ' + imgId + ']\n';
+    logger.info('Injected ZIP image: ' + imgId + ' (' + zipImg.name + ', ' + zipImg.size + ' bytes, format: ' + fmt + ')');
+  }
+
+  logger.info('Total images after merge: ' + targetChapter.images.length);
 }
 
 function parseHtmlStructure(html) {
@@ -74,11 +192,26 @@ function parseHtmlStructure(html) {
       } else {
         currentChapter.subSections.push(sub);
       }
-    } else if (tagName === 'table' && currentChapter) {
+    } else if (tagName === 'table') {
+      // Ensure chapter exists for tables too
+      if (!currentChapter) {
+        currentChapter = {
+          title: '', level: 0, content: '',
+          subSections: [], images: [], tables: [], footnotes: []
+        };
+      }
       currentChapter.tables.push(parseTable($, $el));
     } else if (tagName === 'p' || tagName === 'div') {
+      // Ensure chapter exists BEFORE processing images
+      if (!currentChapter) {
+        currentChapter = {
+          title: '', level: 0, content: '',
+          subSections: [], images: [], tables: [], footnotes: []
+        };
+      }
+
       var imgs = $el.find('img');
-      if (imgs.length > 0 && currentChapter) {
+      if (imgs.length > 0) {
         imgs.each(function(i, img) {
           var $img = $(img);
           var imgId = 'img' + (currentChapter.images.length + 1);
@@ -101,13 +234,8 @@ function parseHtmlStructure(html) {
       if (content) {
         if (currentSection) {
           currentSection.content += content + '\n\n';
-        } else if (currentChapter) {
-          currentChapter.content += content + '\n\n';
         } else {
-          currentChapter = {
-            title: '', level: 0, content: content + '\n\n',
-            subSections: [], images: [], tables: [], footnotes: []
-          };
+          currentChapter.content += content + '\n\n';
         }
       }
     }
