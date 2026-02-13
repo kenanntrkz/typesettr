@@ -121,6 +121,10 @@ async function processTypesettingJob(job) {
     let finalLatexCode = latexCode.replace(/\\includegraphics(\[[^\]]*\])?\{images\//g, '\\includegraphics$1{');
     // 2. Remove any remaining [GORSEL: ...] placeholders that weren't replaced
     finalLatexCode = finalLatexCode.replace(/\[GORSEL:\s*\w+\]/g, '');
+    // 3. Force all figures to [H] placement (exact position, no floating)
+    finalLatexCode = finalLatexCode.replace(/\\begin\{figure\}\[htbp\]/g, '\\begin{figure}[H]');
+    finalLatexCode = finalLatexCode.replace(/\\begin\{figure\}\[ht\]/g, '\\begin{figure}[H]');
+    finalLatexCode = finalLatexCode.replace(/\\begin\{figure\}\[h!\]/g, '\\begin{figure}[H]');
     if (finalLatexCode !== latexCode) {
       logger.info('Safety net: fixed image paths or removed unreplaced placeholders in final LaTeX');
     }

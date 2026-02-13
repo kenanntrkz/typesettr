@@ -33,16 +33,16 @@ KRİTİK KURALLAR:
 4. Görseller:
    - Metin içinde [GORSEL: imgX] placeholder'ları göreceksin
    - Her placeholder'ı, aşağıda verilen Görseller listesindeki doğru dosya adıyla \\includegraphics komutuyla değiştir
-   - Görseli metnin akışında placeholder'ın bulunduğu yere yerleştir
-   - Format:
-   \\begin{figure}[htbp]
+   - KRİTİK: Görseli TAM OLARAK placeholder'ın bulunduğu yere koy, yerini DEĞİŞTİRME
+   - Format (float KULLANMA, [H] ile tam yerinde tut):
+   \\begin{figure}[H]
      \\centering
-     \\includegraphics[width=0.8\\textwidth]{DOSYAADI}
-     \\caption{Açıklama}
-     \\label{fig:benzersiz-id}
+     \\includegraphics[width=0.7\\textwidth]{DOSYAADI}
    \\end{figure}
+   - caption ve label EKLEME — görselleri sade tut
    - KRİTİK: DOSYAADI sadece dosya adı olmalı, "images/" prefix'i EKLEME (örn: img1.png, img2.jpg)
    - graphicspath zaten ayarlı, sadece dosya adını yaz
+   - Görselin sırasını KORU: [GORSEL: img1] → img1.png, [GORSEL: img2] → img2.png vb.
 5. Tablolar:
    \\begin{table}[htbp]
      \\centering
@@ -132,7 +132,7 @@ KRİTİK KURALLAR:
         const caption = img.caption || img.alt || '';
         const placeholder = `[GORSEL: ${img.id}]`;
         if (latex.includes(placeholder)) {
-          const figureBlock = `\\begin{figure}[htbp]\n  \\centering\n  \\includegraphics[width=0.8\\textwidth]{${filename}}\n  \\caption{${caption}}\n  \\label{fig:${img.id}}\n\\end{figure}`;
+          const figureBlock = `\\begin{figure}[H]\n  \\centering\n  \\includegraphics[width=0.7\\textwidth]{${filename}}\n\\end{figure}`;
           latex = latex.replace(placeholder, figureBlock);
           logger.info(`Replaced unreplaced placeholder ${placeholder} with figure block`);
         }
