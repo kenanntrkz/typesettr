@@ -52,8 +52,8 @@ async function handleJsonCompile(req, res) {
     fs.writeFileSync(mainTexPath, req.body.latex, 'utf-8');
 
     // Write images from base64 payload to images/ directory
+    const imagesDir = path.join(jobDir, 'images');
     if (req.body.images && Array.isArray(req.body.images) && req.body.images.length > 0) {
-      const imagesDir = path.join(jobDir, 'images');
       fs.mkdirSync(imagesDir, { recursive: true });
       for (const img of req.body.images) {
         if (img.name && img.data) {
@@ -74,7 +74,6 @@ async function handleJsonCompile(req, res) {
     }
 
     // Convert unsupported image formats (EMF, WMF, BMP, TIFF, GIF) to PNG
-    const imagesDir = path.join(jobDir, 'images');
     if (fs.existsSync(imagesDir)) {
       convertUnsupportedImages(imagesDir);
     }
@@ -133,8 +132,9 @@ async function handleMultipartCompile(req, res) {
 }
 
 /**
- * Convert unsupported image formats to PNG using ImageMagick.
- * Uses magic bytes detection because files might be named .png but contain EMF/WMF data.
+ * Convert unsupported image formats to PNG.
+ * Uses magic bytes to detect actual format, then proper extension for conversion tools.
+ * Conversion chain: inkscape (best for EMF/WMF/SVG) → ImageMagick (fallback)
  * pdflatex only supports: PNG, JPG, PDF
  */
 function convertUnsupportedImages(imagesDir) {
@@ -154,28 +154,71 @@ function convertUnsupportedImages(imagesDir) {
       continue;
     }
 
-    // Unknown/unsupported format — need to convert to PNG
-    console.log(`[${new Date().toISOString()}] ${file}: not a valid PNG/JPEG/PDF (magic: ${buf.slice(0, 4).toString('hex')}), converting...`);
+    // Detect actual format from magic bytes for proper file extension
+    const isEMF = buf.length > 44 && buf[0] === 0x01 && buf[1] === 0x00 && buf[2] === 0x00 && buf[3] === 0x00;
+    const isWMF = buf.length > 4 && ((buf[0] === 0xD7 && buf[1] === 0xCD) || (buf[0] === 0x01 && buf[1] === 0x00 && buf[2] === 0x09 && buf[3] === 0x00));
+    const isSVG = buf.toString('utf8', 0, Math.min(200, buf.length)).includes('<svg');
+    const detectedExt = isEMF ? 'emf' : isWMF ? 'wmf' : isSVG ? 'svg' : 'unknown';
 
-    // Write original to temp file with detected extension for ImageMagick
-    const tmpPath = filePath + '.original';
-    const outputPath = filePath.replace(/\.[^.]+$/, '') + '.png';
+    console.log(`[${new Date().toISOString()}] ${file}: detected as ${detectedExt} (magic: ${buf.slice(0, 4).toString('hex')}), converting to PNG...`);
+
+    // Rename to proper extension so tools can identify the format
+    const baseName = file.replace(/\.[^.]+$/, '');
+    const tmpPath = path.join(imagesDir, `${baseName}.${detectedExt}`);
+    const outputPath = path.join(imagesDir, `${baseName}.png`);
     fs.renameSync(filePath, tmpPath);
 
-    try {
-      execSync(`convert "${tmpPath}" "${outputPath}"`, { timeout: 30000 });
-      fs.unlinkSync(tmpPath);
-      // If the original file was not .png, remove it and ensure .png exists
-      if (filePath !== outputPath && fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+    let converted = false;
+
+    // Method 1: inkscape (best for EMF/WMF/SVG)
+    if (!converted) {
+      try {
+        execSync(`inkscape "${tmpPath}" --export-type=png --export-filename="${outputPath}" --export-dpi=300 2>&1`, {
+          timeout: 60000,
+          env: { ...process.env, DISPLAY: '' }
+        });
+        if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
+          converted = true;
+          console.log(`[${new Date().toISOString()}] inkscape converted ${baseName}.${detectedExt} → ${baseName}.png (${fs.statSync(outputPath).size} bytes)`);
+        }
+      } catch (err) {
+        console.warn(`[${new Date().toISOString()}] inkscape failed for ${baseName}.${detectedExt}: ${err.message.substring(0, 200)}`);
       }
-      console.log(`[${new Date().toISOString()}] Converted ${file} → ${path.basename(outputPath)}`);
-    } catch (err) {
-      console.warn(`[${new Date().toISOString()}] ImageMagick convert failed for ${file}: ${err.message}`);
-      // Restore original file
-      if (fs.existsSync(tmpPath)) {
-        fs.renameSync(tmpPath, filePath);
+    }
+
+    // Method 2: ImageMagick convert (fallback)
+    if (!converted) {
+      try {
+        execSync(`convert "${tmpPath}" "${outputPath}" 2>&1`, { timeout: 30000 });
+        if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
+          converted = true;
+          console.log(`[${new Date().toISOString()}] ImageMagick converted ${baseName}.${detectedExt} → ${baseName}.png`);
+        }
+      } catch (err) {
+        console.warn(`[${new Date().toISOString()}] ImageMagick failed for ${baseName}.${detectedExt}: ${err.message.substring(0, 200)}`);
       }
+    }
+
+    // Method 3: rsvg-convert (for SVG only)
+    if (!converted && isSVG) {
+      try {
+        execSync(`rsvg-convert -f png -o "${outputPath}" "${tmpPath}" 2>&1`, { timeout: 30000 });
+        if (fs.existsSync(outputPath) && fs.statSync(outputPath).size > 0) {
+          converted = true;
+          console.log(`[${new Date().toISOString()}] rsvg-convert converted ${baseName}.${detectedExt} → ${baseName}.png`);
+        }
+      } catch (err) {
+        console.warn(`[${new Date().toISOString()}] rsvg-convert failed: ${err.message.substring(0, 200)}`);
+      }
+    }
+
+    // Cleanup
+    if (converted) {
+      try { fs.unlinkSync(tmpPath); } catch (e) {}
+    } else {
+      // Restore original — pdflatex will fail for this image but at least won't crash
+      console.error(`[${new Date().toISOString()}] ALL conversion methods failed for ${file}. Image will be missing in PDF.`);
+      try { fs.renameSync(tmpPath, filePath); } catch (e) {}
     }
   }
 }
