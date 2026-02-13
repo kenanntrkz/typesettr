@@ -1,6 +1,7 @@
 // Faz 3 — Profile Page
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import usePageTitle from '@/hooks/usePageTitle'
 import { useAuthStore } from '@/stores/authStore'
 import { authAPI } from '@/services/api'
 import { toast } from 'sonner'
@@ -17,6 +18,7 @@ import {
 export default function ProfilePage() {
   const { t, i18n } = useTranslation()
   const { user, updateUser } = useAuthStore()
+  usePageTitle(t('nav.profile'))
 
   // Personal info form
   const [name, setName] = useState(user?.name || '')

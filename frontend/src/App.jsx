@@ -15,6 +15,7 @@ import ContactPage from '@/pages/ContactPage'
 import PrivacyPage from '@/pages/PrivacyPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
 import ResetPasswordPage from '@/pages/ResetPasswordPage'
+import NotFoundPage from '@/pages/NotFoundPage'
 import { useAuthStore } from '@/stores/authStore'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
@@ -59,7 +60,7 @@ function App() {
         </Route>
 
         {/* 404 */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <Toaster position="top-right" richColors />
     </BrowserRouter>

@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import usePageTitle from '@/hooks/usePageTitle'
 import { Button } from '@/components/ui/button'
 import { FadeIn, StaggerContainer, StaggerItem, HoverLift, MagneticButton, Float, GlowPulse, TextReveal } from '@/components/ui/animations'
 import Footer from '@/components/layout/Footer'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import {
   BookOpen, Upload, Settings, Download, FileText, Languages,
-  Award, CheckCircle, ArrowRight, Sparkles, Zap, Shield
+  Award, CheckCircle, ArrowRight, Sparkles, Zap, Shield,
+  Menu, X
 } from 'lucide-react'
 
 function Particles() {
@@ -39,7 +41,9 @@ function AnimatedCounter({ target, suffix = '', duration = 2 }) {
 }
 
 export default function LandingPage() {
+  usePageTitle(null)
   const [scrolled, setScrolled] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { scrollYProgress } = useScroll()
   const navbarOpacity = useTransform(scrollYProgress, [0, 0.05], [0, 1])
 
@@ -66,7 +70,8 @@ export default function LandingPage() {
               Typesettr
             </span>
           </Link>
-          <div className="flex items-center gap-6">
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm hover:opacity-70 transition-opacity" style={{ color: 'hsl(30, 10%, 40%)' }}>
               Özellikler
             </a>
@@ -84,8 +89,48 @@ export default function LandingPage() {
               </Link>
             </MagneticButton>
           </div>
+
+          {/* Mobile hamburger */}
+          <button
+            className="md:hidden p-2 rounded-lg hover:bg-stone-100 transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Menü"
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
       </header>
+
+      {/* ===== MOBILE MENU ===== */}
+      {mobileMenuOpen && (
+        <motion.div
+          className="fixed inset-x-0 top-16 z-40 border-b md:hidden"
+          style={{ backgroundColor: 'hsl(45, 30%, 97%)', borderColor: 'hsl(35, 15%, 88%)' }}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+        >
+          <div className="flex flex-col p-6 gap-4">
+            <a href="#features" className="text-sm py-2 hover:opacity-70 transition-opacity" style={{ color: 'hsl(30, 10%, 40%)' }}
+              onClick={() => setMobileMenuOpen(false)}>
+              Özellikler
+            </a>
+            <a href="#pricing" className="text-sm py-2 hover:opacity-70 transition-opacity" style={{ color: 'hsl(30, 10%, 40%)' }}
+              onClick={() => setMobileMenuOpen(false)}>
+              Fiyatlar
+            </a>
+            <Link to="/login" className="text-sm py-2 hover:opacity-70 transition-opacity" style={{ color: 'hsl(30, 10%, 40%)' }}
+              onClick={() => setMobileMenuOpen(false)}>
+              Giriş Yap
+            </Link>
+            <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+              <Button className="w-full bg-stone-900 text-white hover:bg-stone-800 rounded-full text-sm">
+                Ücretsiz Başla
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      )}
 
       {/* ===== HERO ===== */}
       <section className="relative min-h-screen flex items-center justify-center animated-gradient overflow-hidden">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import usePageTitle from '@/hooks/usePageTitle'
 import { Button } from '@/components/ui/button'
 import { projectAPI } from '@/services/api'
 import { useAuthStore } from '@/stores/authStore'
@@ -130,6 +131,7 @@ export default function DashboardPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const { t } = useTranslation()
+  usePageTitle(t('dashboard.title'))
 
   useEffect(function() { loadProjects() }, [])
 
@@ -173,8 +175,29 @@ export default function DashboardPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-24">
-          <Loader2 className="w-6 h-6 animate-spin" style={{ color: 'hsl(30, 10%, 55%)' }} />
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="p-6 rounded-xl border animate-pulse" style={{ borderColor: 'hsl(35, 15%, 88%)', backgroundColor: 'hsl(40, 25%, 96%)' }}>
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg" style={{ backgroundColor: 'hsl(35, 15%, 88%)' }} />
+                  <div>
+                    <div className="h-4 w-32 rounded mb-2" style={{ backgroundColor: 'hsl(35, 15%, 88%)' }} />
+                    <div className="h-3 w-20 rounded" style={{ backgroundColor: 'hsl(35, 15%, 90%)' }} />
+                  </div>
+                </div>
+                <div className="h-6 w-20 rounded-full" style={{ backgroundColor: 'hsl(35, 15%, 88%)' }} />
+              </div>
+              <div className="flex items-center gap-4 mb-4">
+                <div className="h-3 w-16 rounded" style={{ backgroundColor: 'hsl(35, 15%, 90%)' }} />
+                <div className="h-3 w-12 rounded" style={{ backgroundColor: 'hsl(35, 15%, 90%)' }} />
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-20 rounded-full" style={{ backgroundColor: 'hsl(35, 15%, 88%)' }} />
+                <div className="h-8 w-20 rounded-full" style={{ backgroundColor: 'hsl(35, 15%, 88%)' }} />
+              </div>
+            </div>
+          ))}
         </div>
       ) : projects.length === 0 ? (
         <div className="text-center py-24">

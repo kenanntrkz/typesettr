@@ -1,5 +1,5 @@
 import { Outlet, Link } from 'react-router-dom'
-import { BookOpen } from 'lucide-react'
+import { BookOpen, ArrowLeft } from 'lucide-react'
 
 export default function AuthLayout() {
   return (
@@ -24,7 +24,18 @@ export default function AuthLayout() {
       </div>
 
       {/* Sağ: Form alanı */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex flex-col p-8">
+        <div className="flex justify-end">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors hover:bg-stone-100"
+            style={{ color: 'hsl(25, 60%, 30%)' }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Anasayfa
+          </Link>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-md">
           <Link to="/" className="flex items-center gap-2 mb-8">
             <BookOpen className="w-6 h-6" style={{ color: 'hsl(25, 60%, 30%)' }} />
@@ -33,6 +44,7 @@ export default function AuthLayout() {
             </span>
           </Link>
           <Outlet />
+        </div>
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import usePageTitle from '@/hooks/usePageTitle'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,6 +40,7 @@ const CHAPTER_STYLES = [
 export default function NewProjectPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  usePageTitle(t('nav.newProject'))
   const STEPS = [t("wizard.step1Title"), t("wizard.step2Title"), t("wizard.step3Title"), t("wizard.step4Title")]
   const [step, setStep] = useState(0)
   const [loading, setLoading] = useState(false)

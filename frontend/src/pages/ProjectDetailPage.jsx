@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import usePageTitle from '@/hooks/usePageTitle'
 import { toast } from 'sonner'
 import api from '@/services/api'
 
@@ -70,6 +71,7 @@ export default function ProjectDetailPage() {
   var navigate = useNavigate()
   var { t } = useTranslation()
   var _a = useState(null), project = _a[0], setProject = _a[1]
+  usePageTitle(project ? project.name : t('common.loading'))
   var _b = useState(true), loading = _b[0], setLoading = _b[1]
   var _c = useState(false), retrying = _c[0], setRetrying = _c[1]
   var _d = useState(null), pdfUrl = _d[0], setPdfUrl = _d[1]
