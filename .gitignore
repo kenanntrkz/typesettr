@@ -1,0 +1,17 @@
+node_modules/
+frontend/node_modules/
+frontend/dist/
+.env
+.env.local
+.env.production
+logs/
+*.log
+uploads/
+test-docs/
+test-kitap.docx
+test-output.pdf
+*.bak
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,122 @@
+%% ═══════════════════════════════════════════════════════════
+%% TYPESETTR — book-minimal template
+%% Style: Minimal, unnumbered chapters (poetry, essays, memoir)
+%% ═══════════════════════════════════════════════════════════
+
+\documentclass[{{FONT_SIZE}},twoside,openright]{book}
+
+%% ── Encoding & Language ──────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[{{BABEL_LANG}}]{babel}
+
+%% ── Font ─────────────────────────────────────────────────
+{{FONT_PACKAGE}}
+
+%% ── Page Geometry ────────────────────────────────────────
+\usepackage[{{PAPER_SIZE}},top={{MARGIN_TOP}},bottom={{MARGIN_BOTTOM}},inner={{MARGIN_INNER}},outer={{MARGIN_OUTER}}]{geometry}
+
+%% ── Line Spacing ─────────────────────────────────────────
+\usepackage{setspace}
+{{LINE_SPACING_CMD}}
+
+%% ── Microtypography ─────────────────────────────────────
+\usepackage{microtype}
+
+%% ── Headers & Footers (very minimal) ────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\small\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+%% ── Chapter Title Style (Minimal: no number, centered) ──
+\usepackage{titlesec}
+\titleformat{\chapter}[block]
+  {\normalfont\LARGE\bfseries\centering}
+  {}
+  {0pt}
+  {}
+\titlespacing*{\chapter}{0pt}{60pt}{30pt}
+
+%% No numbering on chapters
+\setcounter{secnumdepth}{-1}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\centering}{}{}{}
+\titlespacing*{\section}{0pt}{20pt}{10pt}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\itshape\centering}{}{}{}
+\titlespacing*{\subsection}{0pt}{15pt}{8pt}
+
+%% ── Table of Contents (minimal, no numbers) ─────────────
+\usepackage{tocloft}
+\renewcommand{\cftchapfont}{\normalfont}
+\renewcommand{\cftsecfont}{\normalfont\itshape}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+\setlength{\cftbeforechapskip}{6pt}
+\setlength{\cftbeforesecskip}{2pt}
+\renewcommand{\cftchappresnum}{}
+\renewcommand{\cftchapaftersnum}{}
+\setlength{\cftchapnumwidth}{0em}
+
+%% ── Graphics & Floats ────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[font=small,labelfont=it,justification=centering]{caption}
+\graphicspath{{images/}}
+
+%% ── Tables ───────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+
+%% ── Lists ────────────────────────────────────────────────
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.5em}
+
+%% ── Quotes (elegant for literary works) ─────────────────
+\usepackage{csquotes}
+
+%% ── Drop Caps (optional, nice for literary works) ───────
+%% \usepackage{lettrine}
+
+%% ── Footnotes ────────────────────────────────────────────
+\usepackage[bottom,hang]{footmisc}
+\setlength{\footnotemargin}{0.8em}
+
+%% ── Index (optional) ─────────────────────────────────────
+{{INDEX_SETUP}}
+
+%% ── Bibliography (optional) ──────────────────────────────
+{{BIBLIOGRAPHY_SETUP}}
+
+%% ── PDF & Hyperlinks (LAST) ─────────────────────────────
+\usepackage[
+  colorlinks=false,
+  hidelinks,
+  bookmarks=true,
+  pdfstartview=FitH
+]{hyperref}
+\hypersetup{
+  pdftitle={{{PDF_TITLE}}},
+  pdfauthor={{{PDF_AUTHOR}}}
+}
+\usepackage{bookmark}
+
+%% ── Title Data ───────────────────────────────────────────
+\title{{{BOOK_TITLE}}}
+\author{{{BOOK_AUTHOR}}}
+\date{{{BOOK_DATE}}}
+
+%% ═════════════════════════════════════════════════════════
+%% END OF PREAMBLE
+%% ═════════════════════════════════════════════════════════
