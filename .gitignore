@@ -15,3 +15,4 @@ test-output.pdf
 Thumbs.db
 .vscode/
 .idea/
+coverage/
