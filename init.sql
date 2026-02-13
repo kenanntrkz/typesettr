@@ -105,9 +105,15 @@ CREATE INDEX idx_projects_user ON projects(user_id);
 
 CREATE INDEX idx_projects_status ON projects(status);
 
+CREATE INDEX idx_projects_user_status ON projects(user_id, status);
+
 CREATE INDEX idx_files_project ON files(project_id);
 
+CREATE INDEX idx_files_project_type ON files(project_id, type);
+
 CREATE INDEX idx_logs_project ON processing_logs(project_id);
+
+CREATE INDEX idx_logs_project_step ON processing_logs(project_id, step);
 
 CREATE OR REPLACE FUNCTION update_updated_at()
 

@@ -63,9 +63,9 @@ export default function LoginPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Şifre</Label>
-            <a href="#" className="text-xs hover:underline" style={{ color: 'hsl(25, 60%, 30%)' }}>
+            <Link to="/forgot-password" className="text-xs hover:underline" style={{ color: 'hsl(25, 60%, 30%)' }}>
               Şifremi unuttum
-            </a>
+            </Link>
           </div>
           <Input
             id="password"

@@ -93,7 +93,7 @@ function ProjectCard({ project, onDelete, t }) {
             <Button size="sm" className="rounded-full text-xs h-8 px-3 bg-stone-900 text-white hover:bg-stone-800"
               onClick={() => {
                 var token = localStorage.getItem('token')
-                var url = 'http://91.99.207.148:3100/api/projects/' + project.id + '/download/pdf'
+                var url = (import.meta.env.VITE_API_URL || '/api') + '/projects/' + project.id + '/download/pdf'
                 fetch(url, { headers: { Authorization: 'Bearer ' + token } })
                   .then(function(r) { return r.blob() })
                   .then(function(blob) {
@@ -116,7 +116,7 @@ function ProjectCard({ project, onDelete, t }) {
           </Button>
         )}
         <Button size="sm" variant="ghost" className="rounded-full text-xs h-8 w-8 p-0 ml-auto hover:bg-red-50"
-          onClick={() => onDelete(project.id)}>
+          onClick={() => onDelete(project.id)} aria-label={t('common.delete') || 'Sil'}>
           <Trash2 className="w-3 h-3" style={{ color: 'hsl(0, 50%, 55%)' }} />
         </Button>
       </div>

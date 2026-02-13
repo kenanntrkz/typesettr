@@ -4,8 +4,27 @@ const { generateToken, generateRefreshToken } = require('../middleware/auth');
 const { generateVerificationToken, sendVerificationEmail, sendPasswordResetEmail } = require('./email.service');
 const logger = require('../utils/logger');
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validateEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  return EMAIL_REGEX.test(email.trim());
+}
+
 async function register({ email, password, name, language }) {
   const { User } = getModels();
+
+  if (!validateEmail(email)) {
+    const error = new Error('Invalid email format');
+    error.status = 400;
+    throw error;
+  }
+
+  if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) {
+    const error = new Error('Name must be between 2 and 100 characters');
+    error.status = 400;
+    throw error;
+  }
 
   const existing = await User.findOne({ where: { email: email.toLowerCase().trim() } });
   if (existing) {
@@ -97,6 +116,12 @@ async function resendVerification(userId) {
 async function login({ email, password }) {
   const { User } = getModels();
 
+  if (!validateEmail(email)) {
+    const error = new Error('Invalid email or password');
+    error.status = 401;
+    throw error;
+  }
+
   const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
   if (!user) {
     const error = new Error('Invalid email or password');
@@ -120,6 +145,11 @@ async function login({ email, password }) {
 
 async function forgotPassword(email) {
   const { User } = getModels();
+
+  if (!validateEmail(email)) {
+    return { message: 'If the email exists, a reset link has been sent' };
+  }
+
   const user = await User.findOne({ where: { email: email.toLowerCase().trim() } });
 
   // Don't reveal if email exists

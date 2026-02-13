@@ -30,9 +30,11 @@ async function uploadFile(projectId, filePath, type, originalName, mimeType) {
   });
 
   // Clean up temp file
-  fs.unlink(filePath, () => {});
+  fs.unlink(filePath, (err) => {
+    if (err) logger.warn(`Failed to clean up temp file ${filePath}: ${err.message}`);
+  });
 
-  logger.info(`File uploaded: ${file.id} (${storagePath}, ${fileSize} bytes)`);;
+  logger.info(`File uploaded: ${file.id} (${storagePath}, ${fileSize} bytes)`);
   return file.toJSON();
 }
 
@@ -78,7 +80,7 @@ async function uploadBuffer(projectId, buffer, storagePath, mimeType) {
     'Content-Type': mimeType,
     'X-Project-Id': projectId
   });
-  logger.info(`Buffer uploaded: ${storagePath} (${buffer.length} bytes)`);;
+  logger.info(`Buffer uploaded: ${storagePath} (${buffer.length} bytes)`);
   return storagePath;
 }
 

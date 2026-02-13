@@ -46,7 +46,7 @@ function fmtDate(d) {
   })
 }
 
-var API_BASE = import.meta.env.VITE_API_URL || 'http://91.99.207.148:3100/api'
+var API_BASE = import.meta.env.VITE_API_URL || '/api'
 
 function downloadFile(projectId, type, filename, t) {
   var token = localStorage.getItem('token')
@@ -113,7 +113,7 @@ export default function ProjectDetailPage() {
     })
       .then(function(r) { return r.blob() })
       .then(function(blob) { setPdfUrl(URL.createObjectURL(blob)) })
-      .catch(function() {})
+      .catch(function() { toast.error(t('project.pdfPreviewFailed') || 'PDF \u00f6nizleme y\u00fcklenemedi') })
   }, [project && project.status, project && project.output_pdf_url, id])
 
   var handleRetry = async function() {
@@ -179,7 +179,7 @@ export default function ProjectDetailPage() {
                 <span className="text-sm text-gray-600">{t('project.progress')}</span>
                 <span className="text-sm font-semibold text-blue-600">{project.progress || 0}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div className="w-full bg-gray-200 rounded-full h-2.5" role="progressbar" aria-valuenow={project.progress || 0} aria-valuemin={0} aria-valuemax={100} aria-label={t('project.progress')}>
                 <div className={'h-2.5 rounded-full transition-all duration-500 ' + (
                   project.status === 'failed' ? 'bg-red-500' :
                   project.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'
@@ -197,7 +197,7 @@ export default function ProjectDetailPage() {
                       st === 'active' ? 'bg-blue-100 text-blue-600 ring-2 ring-blue-300' :
                       st === 'failed' ? 'bg-red-100 text-red-600' :
                                         'bg-gray-100 text-gray-400'
-                    )}>
+                    )} role="img" aria-label={g.label + ' - ' + st}>
                       {st === 'done' ? '✓' :
                        st === 'active' ? <span className="animate-pulse">{g.icon}</span> :
                        st === 'failed' ? '✗' :

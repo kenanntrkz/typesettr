@@ -79,10 +79,11 @@ export default function NewProjectPage() {
 
   // Fetch cover templates
   useEffect(() => {
-    fetch('/api/covers/templates')
+    const apiBase = import.meta.env.VITE_API_URL || '/api'
+    fetch(apiBase + '/covers/templates')
       .then(r => r.json())
       .then(d => { if (d.success) setCoverTemplates(d.data) })
-      .catch(() => {})
+      .catch(() => { toast.error(t('wizard.coverTemplatesFailed') || 'Kapak şablonları yüklenemedi') })
   }, [])
 
   // File upload

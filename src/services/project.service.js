@@ -95,11 +95,21 @@ async function deleteProject(projectId, userId) {
   return { success: true };
 }
 
+const ALLOWED_STATUS_FIELDS = [
+  'status', 'current_step', 'progress', 'error_message',
+  'output_pdf_url', 'output_latex_url', 'page_count',
+  'file_size', 'processing_time_ms', 'source_file_url'
+];
+
 async function updateProjectStatus(projectId, updates) {
   const { Project } = getModels();
   const project = await Project.findByPk(projectId);
   if (!project) return null;
-  Object.assign(project, updates);
+  const safeUpdates = {};
+  for (const key of ALLOWED_STATUS_FIELDS) {
+    if (updates[key] !== undefined) safeUpdates[key] = updates[key];
+  }
+  Object.assign(project, safeUpdates);
   await project.save();
   return project.toJSON();
 }

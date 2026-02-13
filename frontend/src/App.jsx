@@ -13,7 +13,10 @@ import AboutPage from '@/pages/AboutPage'
 import FaqPage from '@/pages/FaqPage'
 import ContactPage from '@/pages/ContactPage'
 import PrivacyPage from '@/pages/PrivacyPage'
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
+import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import { useAuthStore } from '@/stores/authStore'
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 function ProtectedRoute({ children }) {
   const token = useAuthStore((s) => s.token)
@@ -29,6 +32,7 @@ function GuestRoute({ children }) {
 
 function App() {
   return (
+    <ErrorBoundary>
     <BrowserRouter>
       <Routes>
         {/* Public */}
@@ -42,6 +46,8 @@ function App() {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
           <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+          <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+          <Route path="/reset-password" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
         </Route>
 
         {/* Protected */}
@@ -57,6 +63,7 @@ function App() {
       </Routes>
       <Toaster position="top-right" richColors />
     </BrowserRouter>
+    </ErrorBoundary>
   )
 }
 

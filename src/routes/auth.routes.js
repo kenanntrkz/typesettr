@@ -17,7 +17,7 @@ router.post('/register', authLimiter, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.post('/verify-email', async (req, res, next) => {
+router.post('/verify-email', authLimiter, async (req, res, next) => {
   try {
     const { token } = req.body;
     if (!token) return res.status(400).json({ success: false, error: 'Token is required' });
@@ -53,7 +53,7 @@ router.post('/forgot-password', authLimiter, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
-router.post('/reset-password', async (req, res, next) => {
+router.post('/reset-password', authLimiter, async (req, res, next) => {
   try {
     const { token, newPassword } = req.body;
     if (!token || !newPassword) return res.status(400).json({ success: false, error: 'Token and new password are required' });
@@ -71,7 +71,8 @@ router.get('/profile', authenticate, async (req, res, next) => {
 
 router.put('/profile', authenticate, async (req, res, next) => {
   try {
-    const user = await authService.updateProfile(req.user.id, req.body);
+    const { name, language } = req.body;
+    const user = await authService.updateProfile(req.user.id, { name, language });
     res.json({ success: true, user });
   } catch (error) { next(error); }
 });
