@@ -1,11 +1,15 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
-import { LayoutDashboard, Users, FolderKanban, Activity, ArrowLeft, LogOut, Shield } from 'lucide-react'
+import { LayoutDashboard, Users, FolderKanban, Activity, ArrowLeft, LogOut, Shield, ScrollText, ListTodo, Settings, TrendingUp } from 'lucide-react'
 
 const navItems = [
   { path: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/admin/analytics', icon: TrendingUp, label: 'Analitik' },
   { path: '/admin/users', icon: Users, label: 'Kullanıcılar' },
   { path: '/admin/projects', icon: FolderKanban, label: 'Projeler' },
+  { path: '/admin/queue', icon: ListTodo, label: 'Kuyruk' },
+  { path: '/admin/logs', icon: ScrollText, label: 'Loglar' },
+  { path: '/admin/settings', icon: Settings, label: 'Ayarlar' },
   { path: '/admin/system', icon: Activity, label: 'Sistem' },
 ]
 
@@ -31,7 +35,7 @@ export default function AdminLayout() {
           <p className="text-xs text-stone-500 mt-1">{user?.name || user?.email}</p>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {navItems.map(({ path, icon: Icon, label }) => {
             const isActive = location.pathname === path ||
               (path !== '/admin' && location.pathname.startsWith(path))

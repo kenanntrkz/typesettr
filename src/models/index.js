@@ -3,6 +3,8 @@ const UserFactory = require('./User');
 const ProjectFactory = require('./Project');
 const FileFactory = require('./File');
 const ProcessingLogFactory = require('./ProcessingLog');
+const AuditLogFactory = require('./AuditLog');
+const SiteSettingFactory = require('./SiteSetting');
 
 let initialized = false;
 
@@ -13,6 +15,8 @@ function initModels() {
   const Project = ProjectFactory();
   const File = FileFactory();
   const ProcessingLog = ProcessingLogFactory();
+  const AuditLog = AuditLogFactory();
+  const SiteSetting = SiteSettingFactory();
 
   User.hasMany(Project, { foreignKey: 'user_id', as: 'projects', onDelete: 'CASCADE' });
   Project.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -24,7 +28,7 @@ function initModels() {
   ProcessingLog.belongsTo(Project, { foreignKey: 'project_id', as: 'project' });
 
   initialized = true;
-  return { User, Project, File, ProcessingLog };
+  return { User, Project, File, ProcessingLog, AuditLog, SiteSetting };
 }
 
 function getModels() {
@@ -33,7 +37,9 @@ function getModels() {
     User: UserFactory(),
     Project: ProjectFactory(),
     File: FileFactory(),
-    ProcessingLog: ProcessingLogFactory()
+    ProcessingLog: ProcessingLogFactory(),
+    AuditLog: AuditLogFactory(),
+    SiteSetting: SiteSettingFactory()
   };
 }
 

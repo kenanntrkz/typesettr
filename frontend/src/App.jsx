@@ -22,6 +22,10 @@ import AdminUsersPage from '@/pages/admin/AdminUsersPage'
 import AdminUserDetailPage from '@/pages/admin/AdminUserDetailPage'
 import AdminProjectsPage from '@/pages/admin/AdminProjectsPage'
 import AdminSystemPage from '@/pages/admin/AdminSystemPage'
+import AdminLogsPage from '@/pages/admin/AdminLogsPage'
+import AdminQueuePage from '@/pages/admin/AdminQueuePage'
+import AdminSettingsPage from '@/pages/admin/AdminSettingsPage'
+import AdminAnalyticsPage from '@/pages/admin/AdminAnalyticsPage'
 import { useAuthStore } from '@/stores/authStore'
 import ErrorBoundary from '@/components/ErrorBoundary'
 
@@ -79,6 +83,10 @@ function App() {
           <Route path="/admin/users" element={<AdminUsersPage />} />
           <Route path="/admin/users/:id" element={<AdminUserDetailPage />} />
           <Route path="/admin/projects" element={<AdminProjectsPage />} />
+          <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+          <Route path="/admin/queue" element={<AdminQueuePage />} />
+          <Route path="/admin/logs" element={<AdminLogsPage />} />
+          <Route path="/admin/settings" element={<AdminSettingsPage />} />
           <Route path="/admin/system" element={<AdminSystemPage />} />
         </Route>
 

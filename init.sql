@@ -115,9 +115,33 @@ CREATE INDEX idx_files_project ON files(project_id);
 
 CREATE INDEX idx_files_project_type ON files(project_id, type);
 
+CREATE TABLE audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  admin_email VARCHAR(255),
+  action VARCHAR(100) NOT NULL,
+  target_type VARCHAR(50),
+  target_id UUID,
+  details JSONB,
+  ip_address VARCHAR(45),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE site_settings (
+  key VARCHAR(100) PRIMARY KEY,
+  value JSONB NOT NULL,
+  description VARCHAR(500),
+  updated_by UUID REFERENCES users(id),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE INDEX idx_logs_project ON processing_logs(project_id);
 
 CREATE INDEX idx_logs_project_step ON processing_logs(project_id, step);
+
+CREATE INDEX idx_audit_logs_admin ON audit_logs(admin_id);
+CREATE INDEX idx_audit_logs_action ON audit_logs(action);
+CREATE INDEX idx_audit_logs_created ON audit_logs(created_at DESC);
 
 CREATE OR REPLACE FUNCTION update_updated_at()
 
