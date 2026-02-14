@@ -8,7 +8,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import {
   BookOpen, Upload, Settings, Download, FileText, Languages,
   Award, CheckCircle, ArrowRight, Sparkles, Zap, Shield,
-  Menu, X
+  Menu, X, Star, Clock, FileCheck, CreditCard, Headphones, Lock
 } from 'lucide-react'
 
 function Particles() {
@@ -242,6 +242,97 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
+      {/* ===== BEFORE / AFTER COMPARISON ===== */}
+      <section className="py-24" style={{ backgroundColor: 'hsl(45, 30%, 97%)' }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <FadeIn>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Farkı görün
+            </h2>
+          </FadeIn>
+          <FadeIn delay={0.15}>
+            <p className="text-center mb-16" style={{ color: 'hsl(30, 10%, 45%)' }}>
+              Aynı içerik, bambaşka bir okuma deneyimi.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={0.3}>
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* BEFORE — Word */}
+              <motion.div
+                className="rounded-xl border overflow-hidden"
+                style={{ borderColor: 'hsl(35, 15%, 85%)', backgroundColor: 'white' }}
+                whileHover={{ y: -4 }}
+                transition={{ type: 'spring', stiffness: 300 }}
+              >
+                <div className="px-4 py-2.5 flex items-center gap-2 border-b" style={{ backgroundColor: 'hsl(220, 50%, 96%)', borderColor: 'hsl(220, 30%, 88%)' }}>
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 70%, 65%)' }} />
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(45, 80%, 60%)' }} />
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(130, 50%, 55%)' }} />
+                  </div>
+                  <span className="text-xs ml-2" style={{ color: 'hsl(220, 15%, 55%)', fontFamily: "'Inter', sans-serif" }}>belge.docx — Word</span>
+                </div>
+                <div className="p-8" style={{ fontFamily: "'Inter', sans-serif" }}>
+                  <div className="mb-4">
+                    <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'hsl(220, 40%, 92%)', color: 'hsl(220, 30%, 50%)' }}>Önce</span>
+                  </div>
+                  <h3 className="text-lg font-bold mb-3" style={{ fontFamily: "'Inter', sans-serif", color: 'hsl(0, 0%, 15%)' }}>
+                    Birinci Bölüm
+                  </h3>
+                  <p className="text-sm leading-[1.5] mb-3" style={{ color: 'hsl(0, 0%, 25%)', textAlign: 'left' }}>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                  </p>
+                  <p className="text-sm leading-[1.5] mb-3" style={{ color: 'hsl(0, 0%, 25%)', textAlign: 'left' }}>
+                    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident.
+                  </p>
+                  <div className="flex gap-1 mt-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="h-1 rounded-full flex-1" style={{ backgroundColor: 'hsl(0, 0%, 85%)' }} />
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* AFTER — Typesettr */}
+              <motion.div
+                className="rounded-xl border overflow-hidden"
+                style={{ borderColor: 'hsl(25, 40%, 75%)', backgroundColor: 'hsl(40, 40%, 98%)' }}
+                whileHover={{ y: -4 }}
+                transition={{ type: 'spring', stiffness: 300 }}
+              >
+                <div className="px-4 py-2.5 flex items-center gap-2 border-b" style={{ backgroundColor: 'hsl(35, 30%, 93%)', borderColor: 'hsl(35, 20%, 85%)' }}>
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 70%, 65%)' }} />
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(45, 80%, 60%)' }} />
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(130, 50%, 55%)' }} />
+                  </div>
+                  <span className="text-xs ml-2" style={{ color: 'hsl(30, 15%, 50%)', fontFamily: "'Inter', sans-serif" }}>kitap.pdf — Typesettr</span>
+                </div>
+                <div className="p-8" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  <div className="mb-4">
+                    <span className="text-xs px-2 py-0.5 rounded font-medium" style={{ backgroundColor: 'hsla(25, 60%, 30%, 0.12)', color: 'hsl(25, 60%, 30%)', fontFamily: "'Inter', sans-serif" }}>Sonra</span>
+                  </div>
+                  <div className="text-xs tracking-[0.3em] uppercase mb-6" style={{ color: 'hsl(30, 30%, 60%)', fontFamily: "'Inter', sans-serif", letterSpacing: '0.25em' }}>
+                    Birinci Bölüm
+                  </div>
+                  <h3 className="text-2xl font-bold mb-5 italic" style={{ color: 'hsl(25, 60%, 30%)' }}>
+                    Yolculuğun Başlangıcı
+                  </h3>
+                  <p className="text-sm leading-[1.85] mb-4" style={{ color: 'hsl(30, 15%, 25%)', textAlign: 'justify', textIndent: '1.5em' }}>
+                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.
+                  </p>
+                  <p className="text-sm leading-[1.85]" style={{ color: 'hsl(30, 15%, 25%)', textAlign: 'justify', textIndent: '1.5em' }}>
+                    Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat.
+                  </p>
+                  <div className="text-center mt-6 text-xs" style={{ color: 'hsl(30, 15%, 60%)', fontFamily: "'Inter', sans-serif" }}>— 1 —</div>
+                </div>
+              </motion.div>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ===== HOW IT WORKS ===== */}
       <section id="how-it-works" className="py-24" style={{ backgroundColor: 'hsl(45, 30%, 97%)' }}>
         <div className="max-w-4xl mx-auto px-6">
@@ -331,6 +422,201 @@ export default function LandingPage() {
               </StaggerItem>
             ))}
           </StaggerContainer>
+        </div>
+      </section>
+
+      {/* ===== DIVIDER with glow ===== */}
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="border-t glow-line h-px" style={{ borderColor: 'hsl(35, 15%, 85%)' }} />
+      </div>
+
+      {/* ===== SAMPLE PDF SHOWCASE ===== */}
+      <section className="py-24" style={{ backgroundColor: 'hsl(45, 30%, 97%)' }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <FadeIn>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Örnek çıktılar
+            </h2>
+          </FadeIn>
+          <FadeIn delay={0.15}>
+            <p className="text-center mb-16" style={{ color: 'hsl(30, 10%, 45%)' }}>
+              Typesettr ile oluşturulmuş farklı türlerdeki kitaplar.
+            </p>
+          </FadeIn>
+
+          <StaggerContainer staggerDelay={0.15} className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                type: 'Roman',
+                title: 'Sessiz Şehir',
+                pages: 284,
+                duration: '2 dk 15 sn',
+                bgGradient: 'linear-gradient(135deg, hsl(25, 50%, 25%) 0%, hsl(30, 40%, 18%) 100%)',
+              },
+              {
+                type: 'Akademik',
+                title: 'Veri Bilimi ve İstatistik',
+                pages: 412,
+                duration: '3 dk 40 sn',
+                bgGradient: 'linear-gradient(135deg, hsl(210, 40%, 35%) 0%, hsl(215, 35%, 22%) 100%)',
+              },
+              {
+                type: 'Teknik Kitap',
+                title: 'Modern Web Geliştirme',
+                pages: 356,
+                duration: '3 dk 10 sn',
+                bgGradient: 'linear-gradient(135deg, hsl(160, 35%, 30%) 0%, hsl(165, 30%, 20%) 100%)',
+              },
+            ].map((book, i) => (
+              <StaggerItem key={i}>
+                <motion.div
+                  className="group rounded-xl border overflow-hidden cursor-pointer"
+                  style={{ borderColor: 'hsl(35, 15%, 88%)', backgroundColor: 'hsl(40, 25%, 96%)' }}
+                  whileHover={{ y: -6 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                >
+                  {/* Book cover simulation */}
+                  <div
+                    className="relative h-56 flex items-center justify-center overflow-hidden"
+                    style={{ background: book.bgGradient }}
+                  >
+                    <div className="absolute inset-0 opacity-10">
+                      {[...Array(6)].map((_, j) => (
+                        <div
+                          key={j}
+                          className="absolute h-px w-full"
+                          style={{ backgroundColor: 'white', top: `${20 + j * 12}%` }}
+                        />
+                      ))}
+                    </div>
+                    <div className="relative text-center px-6">
+                      <div className="text-xs tracking-[0.3em] uppercase mb-3" style={{ color: 'hsla(0, 0%, 100%, 0.6)' }}>
+                        {book.type}
+                      </div>
+                      <h4 className="text-xl font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                        {book.title}
+                      </h4>
+                    </div>
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/50 transition-colors duration-300">
+                      <span className="text-white text-sm font-medium px-4 py-2 rounded-full border border-white/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        Yakında
+                      </span>
+                    </div>
+                  </div>
+                  {/* Info */}
+                  <div className="p-5">
+                    <h4 className="font-semibold mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>{book.title}</h4>
+                    <div className="flex items-center justify-between text-xs" style={{ color: 'hsl(30, 10%, 50%)' }}>
+                      <span className="flex items-center gap-1">
+                        <FileText className="w-3.5 h-3.5" />
+                        {book.pages} sayfa
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        {book.duration}
+                      </span>
+                    </div>
+                  </div>
+                </motion.div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </div>
+      </section>
+
+      {/* ===== DIVIDER with glow ===== */}
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="border-t glow-line h-px" style={{ borderColor: 'hsl(35, 15%, 85%)' }} />
+      </div>
+
+      {/* ===== TESTIMONIALS ===== */}
+      <section className="py-24" style={{ backgroundColor: 'hsl(45, 30%, 97%)' }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <FadeIn>
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+              Kullanıcılarımız ne diyor?
+            </h2>
+          </FadeIn>
+          <FadeIn delay={0.15}>
+            <p className="text-center mb-16" style={{ color: 'hsl(30, 10%, 45%)' }}>
+              Yüzlerce yazar ve yayınevi Typesettr'a güveniyor.
+            </p>
+          </FadeIn>
+
+          <StaggerContainer staggerDelay={0.15} className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                name: 'Elif Yılmaz',
+                role: 'Roman Yazarı',
+                rating: 5,
+                text: 'İlk romanımı yayına hazırlamak için haftalarca uğraştım. Typesettr ile 3 dakikada profesyonel bir dizgi elde ettim. Sonuç matbaacıyı bile şaşırttı.',
+              },
+              {
+                name: 'Prof. Dr. Ahmet Kaya',
+                role: 'Akademisyen, İTÜ',
+                rating: 5,
+                text: 'Akademik kitaplarımız için LaTeX kullanıyorduk. Typesettr aynı kaliteyi çok daha kolay sunuyor. Kaynakça yönetimi mükemmel.',
+              },
+              {
+                name: 'Zeynep Arslan',
+                role: 'Yayınevi Editörü',
+                rating: 5,
+                text: 'Yayınevimizde aylık 20+ kitap diziyoruz. Typesettr iş akışımızı tamamen değiştirdi. Zamandan ve maliyetten büyük tasarruf.',
+              },
+            ].map((testimonial, i) => (
+              <StaggerItem key={i}>
+                <motion.div
+                  className="p-6 rounded-xl border h-full flex flex-col"
+                  style={{ borderColor: 'hsl(35, 15%, 88%)', backgroundColor: 'hsl(40, 25%, 96%)' }}
+                  whileHover={{ y: -4 }}
+                  transition={{ type: 'spring', stiffness: 300 }}
+                >
+                  {/* Stars */}
+                  <div className="flex gap-1 mb-4">
+                    {[...Array(testimonial.rating)].map((_, j) => (
+                      <Star key={j} className="w-4 h-4 fill-current" style={{ color: 'hsl(40, 80%, 50%)' }} />
+                    ))}
+                  </div>
+                  {/* Quote */}
+                  <p className="text-sm leading-relaxed flex-1 mb-6" style={{ color: 'hsl(30, 10%, 35%)' }}>
+                    &ldquo;{testimonial.text}&rdquo;
+                  </p>
+                  {/* Author */}
+                  <div className="flex items-center gap-3 pt-4 border-t" style={{ borderColor: 'hsl(35, 15%, 90%)' }}>
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold"
+                      style={{ backgroundColor: 'hsl(25, 40%, 88%)', color: 'hsl(25, 60%, 30%)' }}
+                    >
+                      {testimonial.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold">{testimonial.name}</div>
+                      <div className="text-xs" style={{ color: 'hsl(30, 10%, 50%)' }}>{testimonial.role}</div>
+                    </div>
+                  </div>
+                </motion.div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+
+          {/* Trust stats */}
+          <FadeIn delay={0.5}>
+            <div className="flex items-center justify-center gap-8 md:gap-16 mt-16 pt-8 border-t" style={{ borderColor: 'hsl(35, 15%, 88%)' }}>
+              {[
+                { value: '1.200+', label: 'Kitap dizgilendi' },
+                { value: '%98', label: 'Memnuniyet oranı' },
+                { value: '50+', label: 'Yayınevi güveniyor' },
+              ].map((stat, i) => (
+                <div key={i} className="text-center">
+                  <div className="text-xl md:text-2xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'hsl(25, 60%, 30%)' }}>
+                    {stat.value}
+                  </div>
+                  <div className="text-xs mt-1" style={{ color: 'hsl(30, 10%, 50%)' }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
         </div>
       </section>
 
@@ -459,6 +745,22 @@ export default function LandingPage() {
                 </Button>
               </Link>
             </MagneticButton>
+            {/* Trust note */}
+            <p className="mt-6 text-sm" style={{ color: 'hsl(30, 10%, 55%)' }}>
+              Kredi kartı gerekmez
+            </p>
+            <div className="flex items-center justify-center gap-6 mt-4">
+              {[
+                { icon: Lock, text: 'Güvenli altyapı' },
+                { icon: CreditCard, text: 'Kolay ödeme' },
+                { icon: Headphones, text: '7/24 destek' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-xs" style={{ color: 'hsl(30, 10%, 50%)' }}>
+                  <item.icon className="w-3.5 h-3.5" />
+                  <span>{item.text}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </FadeIn>
