@@ -36,7 +36,7 @@ echo "[3/7] Proje dizini hazirlaniyor: $PROJECT_DIR"
 if [ -d "$PROJECT_DIR/.git" ]; then
     echo "  Mevcut repo guncelleniyor..."
     cd "$PROJECT_DIR"
-    git pull origin main
+    git pull origin master
 else
     echo "  Repo klonlaniyor..."
     git clone https://github.com/kenanntrkz/typesettr.git "$PROJECT_DIR"
