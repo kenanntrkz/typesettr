@@ -10,6 +10,7 @@ const DEFAULT_SETTINGS = {
   lineSpacing: 1.15,
   chapterStyle: 'classic',
   language: 'tr',
+  documentType: 'book',
   features: {
     tableOfContents: true,
     listOfFigures: true,

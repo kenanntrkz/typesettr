@@ -10,6 +10,7 @@
 // 7. Partial success support ("PDF created but X images failed")
 // 8. Required LaTeX packages injected into preamble
 // 9. Enhanced safety net post-processing
+// 10. Document type support (book/article/report/exam)
 // ═══════════════════════════════════════════════════════════
 
 const fs = require('fs');
@@ -411,10 +412,12 @@ function estimateProcessingTime(metadata, fileSize) {
 /**
  * Generate LaTeX with per-chapter progress notifications.
  * Injects required packages into preamble.
+ * Handles document type-specific structure.
  */
 async function generateFullLatexWithProgress(parsedDoc, plan, settings, coverData, projectId) {
   const { buildPreambleFromTemplate } = require('../../utils/templateEngine');
   const { splitLargeChapter, estimateTokens } = require('../../utils/chunkText');
+  const documentType = settings.documentType || 'book';
 
   // 1. Preamble from template (no AI)
   const chapterStyle = settings.chapterStyle || 'classic';
@@ -467,48 +470,127 @@ async function generateFullLatexWithProgress(parsedDoc, plan, settings, coverDat
     }
   }
 
-  // 3. Assemble
+  // 3. Assemble based on document type
   const features = settings.features || {};
   let doc = preamble + '\n\n\\begin{document}\n\n';
 
-  doc += '\\frontmatter\n\n';
+  if (documentType === 'book') {
+    // Book: full frontmatter/mainmatter/backmatter structure
+    doc += '\\frontmatter\n\n';
 
-  if (features.coverPage !== false) {
-    if (coverData && coverData.templateId && coverData.title) {
-      const { generateCoverLatex } = require('../../services/cover.service');
-      doc += generateCoverLatex(coverData, settings);
-    } else {
-      doc += '\\maketitle\n\\clearpage\n\n';
+    if (features.coverPage !== false) {
+      if (coverData && coverData.templateId && coverData.title) {
+        const { generateCoverLatex } = require('../../services/cover.service');
+        doc += generateCoverLatex(coverData, settings);
+      } else {
+        doc += '\\maketitle\n\\clearpage\n\n';
+      }
+    }
+    if (features.tableOfContents !== false) doc += '\\tableofcontents\n\\clearpage\n\n';
+    if (features.listOfFigures) doc += '\\listoffigures\n\\clearpage\n\n';
+    if (features.listOfTables) doc += '\\listoftables\n\\clearpage\n\n';
+
+    doc += '\\mainmatter\n\n';
+    doc += chapterLatexParts.join('\n\n');
+
+    doc += '\n\n\\backmatter\n\n';
+
+    // Endnotes section
+    const allEndnotes = [];
+    for (const ch of parsedDoc.chapters) {
+      if (ch._endnotes && ch._endnotes.length > 0) {
+        allEndnotes.push(...ch._endnotes);
+      }
+    }
+    if (allEndnotes.length > 0) {
+      doc += '\\chapter*{Son Notlar}\n';
+      doc += '\\addcontentsline{toc}{chapter}{Son Notlar}\n\n';
+      doc += '\\begin{enumerate}\n';
+      for (const en of allEndnotes) {
+        doc += '  \\item ' + en.text + '\n';
+      }
+      doc += '\\end{enumerate}\n\n';
+    }
+
+    if (features.bibliography) doc += '\\printbibliography\n\n';
+    if (features.index) doc += '\\printindex\n\n';
+
+  } else if (documentType === 'report') {
+    // Report: maketitle + optional toc, no frontmatter/backmatter
+    if (features.coverPage !== false) {
+      if (coverData && coverData.templateId && coverData.title) {
+        const { generateCoverLatex } = require('../../services/cover.service');
+        doc += generateCoverLatex(coverData, settings);
+      } else {
+        doc += '\\maketitle\n\\clearpage\n\n';
+      }
+    }
+    if (features.tableOfContents !== false) doc += '\\tableofcontents\n\\clearpage\n\n';
+    if (features.listOfFigures) doc += '\\listoffigures\n\\clearpage\n\n';
+    if (features.listOfTables) doc += '\\listoftables\n\\clearpage\n\n';
+
+    doc += chapterLatexParts.join('\n\n');
+
+    // Endnotes for report: use \chapter*
+    const allEndnotes = [];
+    for (const ch of parsedDoc.chapters) {
+      if (ch._endnotes && ch._endnotes.length > 0) {
+        allEndnotes.push(...ch._endnotes);
+      }
+    }
+    if (allEndnotes.length > 0) {
+      doc += '\n\n\\chapter*{Son Notlar}\n';
+      doc += '\\addcontentsline{toc}{chapter}{Son Notlar}\n\n';
+      doc += '\\begin{enumerate}\n';
+      for (const en of allEndnotes) {
+        doc += '  \\item ' + en.text + '\n';
+      }
+      doc += '\\end{enumerate}\n\n';
+    }
+
+    if (features.bibliography) doc += '\\printbibliography\n\n';
+    if (features.index) doc += '\\printindex\n\n';
+
+  } else if (documentType === 'article') {
+    // Article: compact, no clearpage after toc, no frontmatter/backmatter
+    if (features.coverPage !== false) doc += '\\maketitle\n\n';
+    if (features.tableOfContents !== false) doc += '\\tableofcontents\n\n';
+    if (features.listOfFigures) doc += '\\listoffigures\n\n';
+    if (features.listOfTables) doc += '\\listoftables\n\n';
+
+    doc += chapterLatexParts.join('\n\n');
+
+    // Endnotes for article: use \section* (no \chapter in article)
+    const allEndnotes = [];
+    for (const ch of parsedDoc.chapters) {
+      if (ch._endnotes && ch._endnotes.length > 0) {
+        allEndnotes.push(...ch._endnotes);
+      }
+    }
+    if (allEndnotes.length > 0) {
+      doc += '\n\n\\section*{Son Notlar}\n';
+      doc += '\\addcontentsline{toc}{section}{Son Notlar}\n\n';
+      doc += '\\begin{enumerate}\n';
+      for (const en of allEndnotes) {
+        doc += '  \\item ' + en.text + '\n';
+      }
+      doc += '\\end{enumerate}\n\n';
+    }
+
+    if (features.bibliography) doc += '\\printbibliography\n\n';
+    if (features.index) doc += '\\printindex\n\n';
+
+  } else if (documentType === 'exam') {
+    // Exam: no structural pages at all — direct content
+    doc += chapterLatexParts.join('\n\n');
+    doc += '\n\n';
+
+    // Exam signature block if provided
+    if (settings.examSignatureBlock) {
+      doc += settings.examSignatureBlock + '\n\n';
     }
   }
-  if (features.tableOfContents !== false) doc += '\\tableofcontents\n\\clearpage\n\n';
-  if (features.listOfFigures) doc += '\\listoffigures\n\\clearpage\n\n';
-  if (features.listOfTables) doc += '\\listoftables\n\\clearpage\n\n';
 
-  doc += '\\mainmatter\n\n';
-  doc += chapterLatexParts.join('\n\n');
-
-  doc += '\n\n\\backmatter\n\n';
-
-  // Add endnotes section if any chapter has endnotes
-  const allEndnotes = [];
-  for (const ch of parsedDoc.chapters) {
-    if (ch._endnotes && ch._endnotes.length > 0) {
-      allEndnotes.push(...ch._endnotes);
-    }
-  }
-  if (allEndnotes.length > 0) {
-    doc += '\\chapter*{Son Notlar}\n';
-    doc += '\\addcontentsline{toc}{chapter}{Son Notlar}\n\n';
-    doc += '\\begin{enumerate}\n';
-    for (const en of allEndnotes) {
-      doc += '  \\item ' + en.text + '\n';
-    }
-    doc += '\\end{enumerate}\n\n';
-  }
-
-  if (features.bibliography) doc += '\\printbibliography\n\n';
-  if (features.index) doc += '\\printindex\n\n';
   doc += '\\end{document}\n';
 
   return doc;

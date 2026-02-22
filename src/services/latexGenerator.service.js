@@ -8,6 +8,7 @@
 // 5. Comprehensive figure placement ([H] forced)
 // 6. LaTeX environment validation (balanced begin/end)
 // 7. Endnote support
+// 8. Document type support (book/article/report/exam)
 // ═══════════════════════════════════════════════════════════
 
 const Anthropic = require('@anthropic-ai/sdk');
@@ -16,6 +17,22 @@ const { buildPreambleFromTemplate } = require('../utils/templateEngine');
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const MODEL = process.env.AI_MODEL || 'claude-sonnet-4-20250514';
+
+/**
+ * Get heading commands based on document type
+ */
+function getHeadingConfig(documentType) {
+  switch (documentType) {
+    case 'article':
+      return { topLevel: '\\section', sub: '\\subsection', subSub: '\\subsubsection' };
+    case 'exam':
+      return { topLevel: '\\section*', sub: '\\subsection*', subSub: '\\paragraph*' };
+    case 'report':
+    case 'book':
+    default:
+      return { topLevel: '\\chapter', sub: '\\section', subSub: '\\subsection' };
+  }
+}
 
 /**
  * Generate preamble from TEMPLATE (not AI-generated)
@@ -33,13 +50,27 @@ function generatePreamble(plan, settings, coverData) {
  */
 async function generateChapterLatex(chapter, chapterIndex, plan, settings) {
   const chapterNum = chapterIndex + 1;
-  logger.info(`Generating LaTeX for chapter ${chapterNum}: ${chapter.title}`);
+  const documentType = settings.documentType || 'book';
+  const headingConfig = getHeadingConfig(documentType);
+  logger.info(`Generating LaTeX for chapter ${chapterNum}: ${chapter.title} (type: ${documentType})`);
+
+  // Build heading instruction based on document type
+  let headingInstruction;
+  if (documentType === 'article') {
+    headingInstruction = `1. \\section{Baslik} ile basla (\\chapter KULLANMA — article sinifinda chapter yok)
+2. Alt basliklar: \\subsection{...}, \\subsubsection{...}`;
+  } else if (documentType === 'exam') {
+    headingInstruction = `1. \\section*{Baslik} ile basla (numarasiz, \\chapter KULLANMA)
+2. Alt basliklar: \\subsection*{...}, \\paragraph*{...}`;
+  } else {
+    headingInstruction = `1. \\chapter{Baslik} ile basla (bolum numarasini sen ekleme, LaTeX otomatik numarandirir)
+2. Alt basliklar: \\section{...}, \\subsection{...}, \\subsubsection{...}`;
+  }
 
   const systemPrompt = `Sen uzman bir LaTeX icerik donusturucususun. Verilen bolum metnini temiz LaTeX koduna donustur.
 
 KRITIK KURALLAR:
-1. \\chapter{Baslik} ile basla (bolum numarasini sen ekleme, LaTeX otomatik numarandirir)
-2. Alt basliklar: \\section{...}, \\subsection{...}, \\subsubsection{...}
+${headingInstruction}
 3. Paragraflar arasinda bos satir birak
 4. Gorseller:
    - Metin icinde [GORSEL: imgX] placeholder'lari goreceksin
@@ -84,14 +115,14 @@ OZEL KARAKTER ESCAPE'LERI:
 - AMA Turkce karakterler (c, g, i, I, o, s, u, C, G, O, S, U) DOGRUDAN YAZILMALI, escape EDILMEMELI
 
 CIKTI: Sadece bu bolumun LaTeX kodu.
-- \\chapter{...} ile basla
+- ${headingConfig.topLevel}{...} ile basla
 - \\end{document} EKLEME
 - Aciklama, yorum, markdown EKLEME — sadece saf LaTeX kodu`;
 
   // Handle split chapter continuations
   const isContinuation = chapter._continueChapter || false;
   const continuationNote = isContinuation
-    ? '\nONEMLI: Bu bolumun DEVAMI. \\chapter komutu KULLANMA. Dogrudan paragraf metniyle basla. Gerekirse \\section veya \\subsection kullan.'
+    ? `\nONEMLI: Bu bolumun DEVAMI. ${headingConfig.topLevel} komutu KULLANMA. Dogrudan paragraf metniyle basla. Gerekirse ${headingConfig.sub} veya ${headingConfig.subSub} kullan.`
     : '';
 
   // Build content message
@@ -169,7 +200,7 @@ CIKTI: Sadece bu bolumun LaTeX kodu.
     return latex;
   } catch (error) {
     logger.error(`Chapter ${chapterNum} generation failed: ${error.message}`);
-    return generateFallbackChapter(chapter, chapterIndex);
+    return generateFallbackChapter(chapter, chapterIndex, settings);
   }
 }
 
@@ -370,6 +401,7 @@ function autoFixEnvironments(latex, validation) {
  */
 async function generateFullLatex(parsedDoc, plan, settings, coverData) {
   logger.info('Starting full LaTeX generation (template + AI hybrid)...');
+  const documentType = settings.documentType || 'book';
 
   // 1. PREAMBLE from template (deterministic, no AI)
   const preamble = generatePreamble(plan, settings, coverData);
@@ -383,25 +415,51 @@ async function generateFullLatex(parsedDoc, plan, settings, coverData) {
     chapterLatexParts.push(chapterLatex);
   }
 
-  // 3. ASSEMBLE full document
+  // 3. ASSEMBLE full document based on document type
   const features = settings.features || {};
   let doc = preamble + '\n\n\\begin{document}\n\n';
 
-  doc += '\\frontmatter\n\n';
-  if (features.coverPage !== false) doc += '\\maketitle\n\\clearpage\n\n';
-  if (features.tableOfContents !== false) doc += '\\tableofcontents\n\\clearpage\n\n';
-  if (features.listOfFigures) doc += '\\listoffigures\n\\clearpage\n\n';
-  if (features.listOfTables) doc += '\\listoftables\n\\clearpage\n\n';
+  if (documentType === 'book') {
+    // Book: full frontmatter/mainmatter/backmatter structure
+    doc += '\\frontmatter\n\n';
+    if (features.coverPage !== false) doc += '\\maketitle\n\\clearpage\n\n';
+    if (features.tableOfContents !== false) doc += '\\tableofcontents\n\\clearpage\n\n';
+    if (features.listOfFigures) doc += '\\listoffigures\n\\clearpage\n\n';
+    if (features.listOfTables) doc += '\\listoftables\n\\clearpage\n\n';
+    doc += '\\mainmatter\n\n';
+    doc += chapterLatexParts.join('\n\n');
+    doc += '\n\n\\backmatter\n\n';
+    if (features.bibliography) doc += '\\printbibliography\n\n';
+    if (features.index) doc += '\\printindex\n\n';
+  } else if (documentType === 'report') {
+    // Report: maketitle + optional toc, no frontmatter/backmatter
+    if (features.coverPage !== false) doc += '\\maketitle\n\\clearpage\n\n';
+    if (features.tableOfContents !== false) doc += '\\tableofcontents\n\\clearpage\n\n';
+    if (features.listOfFigures) doc += '\\listoffigures\n\\clearpage\n\n';
+    if (features.listOfTables) doc += '\\listoftables\n\\clearpage\n\n';
+    doc += chapterLatexParts.join('\n\n');
+    doc += '\n\n';
+    if (features.bibliography) doc += '\\printbibliography\n\n';
+    if (features.index) doc += '\\printindex\n\n';
+  } else if (documentType === 'article') {
+    // Article: compact, no clearpage after toc
+    if (features.coverPage !== false) doc += '\\maketitle\n\n';
+    if (features.tableOfContents !== false) doc += '\\tableofcontents\n\n';
+    if (features.listOfFigures) doc += '\\listoffigures\n\n';
+    if (features.listOfTables) doc += '\\listoftables\n\n';
+    doc += chapterLatexParts.join('\n\n');
+    doc += '\n\n';
+    if (features.bibliography) doc += '\\printbibliography\n\n';
+    if (features.index) doc += '\\printindex\n\n';
+  } else if (documentType === 'exam') {
+    // Exam: no structural pages at all — direct content
+    doc += chapterLatexParts.join('\n\n');
+    doc += '\n\n';
+  }
 
-  doc += '\\mainmatter\n\n';
-  doc += chapterLatexParts.join('\n\n');
-
-  doc += '\n\n\\backmatter\n\n';
-  if (features.bibliography) doc += '\\printbibliography\n\n';
-  if (features.index) doc += '\\printindex\n\n';
   doc += '\\end{document}\n';
 
-  logger.info(`Full LaTeX generated: ${doc.length} chars, ${chapterLatexParts.length} chapters`);
+  logger.info(`Full LaTeX generated: ${doc.length} chars, ${chapterLatexParts.length} chapters (type: ${documentType})`);
   return doc;
 }
 
@@ -454,8 +512,12 @@ KURALLAR:
 /**
  * Fallback chapter generation (no AI, basic conversion)
  */
-function generateFallbackChapter(chapter, index) {
-  let latex = `\\chapter{${escapeLatex(chapter.title || 'Bolum ' + (index + 1))}}\n\n`;
+function generateFallbackChapter(chapter, index, settings) {
+  const documentType = (settings && settings.documentType) || 'book';
+  const headingConfig = getHeadingConfig(documentType);
+  const topCmd = headingConfig.topLevel;
+
+  let latex = `${topCmd}{${escapeLatex(chapter.title || 'Bolum ' + (index + 1))}}\n\n`;
 
   if (chapter.content) {
     // Convert content with formatting markers
@@ -506,7 +568,7 @@ function generateFallbackChapter(chapter, index) {
 
   if (chapter.subSections) {
     for (const section of chapter.subSections) {
-      const sectionCmd = section.level === 3 ? '\\subsection' : '\\section';
+      const sectionCmd = section.level === 3 ? headingConfig.subSub : headingConfig.sub;
       latex += `${sectionCmd}{${escapeLatex(section.title || '')}}\n\n`;
       if (section.content) {
         latex += escapeLatex(section.content) + '\n\n';
@@ -540,5 +602,6 @@ module.exports = {
   generateChapterLatex,
   generateFullLatex,
   generateTableLatex,
-  fixLatexErrors
+  fixLatexErrors,
+  getHeadingConfig
 };

@@ -11,31 +11,46 @@ import { useDropzone } from 'react-dropzone'
 import {
   Upload, FileText, ChevronRight, ChevronLeft, Check,
   Loader2, BookOpen, Type, Columns, AlignLeft, Minus,
-  Rocket, X
+  Rocket, X, ClipboardList
 } from 'lucide-react'
 
 
 
+const DOCUMENT_TYPES = [
+  { value: 'book', label: 'Kitap', desc: 'Roman, hikaye, kitap', icon: BookOpen },
+  { value: 'article', label: 'Makale', desc: 'Kısa belge, makale', icon: FileText },
+  { value: 'report', label: 'Rapor', desc: 'Rapor, tez, proje', icon: Columns },
+  { value: 'exam', label: 'Sınav', desc: 'Sınav kağıdı', icon: ClipboardList },
+]
+
 const PAGE_SIZES = [
-  { value: 'a4paper', label: 'A4 (210×297mm)', desc: 'Standart' },
-  { value: 'a5paper', label: 'A5 (148×210mm)', desc: 'Roman / Hikaye' },
-  { value: 'b5paper', label: 'B5 (176×250mm)', desc: 'Akademik' },
-  { value: 'letterpaper', label: 'Letter (216×279mm)', desc: 'US Standart' },
+  { value: 'a4paper', label: 'A4 (210\u00d7297mm)', desc: 'Standart' },
+  { value: 'a5paper', label: 'A5 (148\u00d7210mm)', desc: 'Roman / Hikaye' },
+  { value: 'b5paper', label: 'B5 (176\u00d7250mm)', desc: 'Akademik' },
+  { value: 'letterpaper', label: 'Letter (216\u00d7279mm)', desc: 'US Standart' },
 ]
 
 const FONTS = [
-  { value: 'ebgaramond', label: 'Garamond', desc: 'Roman / hikaye için ideal' },
-  { value: 'palatino', label: 'Palatino', desc: 'Akademik için ideal' },
+  { value: 'ebgaramond', label: 'Garamond', desc: 'Roman / hikaye i\u00e7in ideal' },
+  { value: 'palatino', label: 'Palatino', desc: 'Akademik i\u00e7in ideal' },
   { value: 'times', label: 'Times New Roman', desc: 'Klasik' },
   { value: 'libertine', label: 'Linux Libertine', desc: 'Modern' },
 ]
 
 const CHAPTER_STYLES = [
-  { value: 'classic', label: 'Klasik', desc: 'Geleneksel bölüm başlığı' },
-  { value: 'modern', label: 'Modern', desc: 'Sol hizalı, çizgi dekor' },
-  { value: 'academic', label: 'Akademik', desc: 'Numaralı hiyerarşi' },
-  { value: 'minimal', label: 'Minimalist', desc: 'Sadece başlık' },
+  { value: 'classic', label: 'Klasik', desc: 'Geleneksel b\u00f6l\u00fcm ba\u015fl\u0131\u011f\u0131' },
+  { value: 'modern', label: 'Modern', desc: 'Sol hizal\u0131, \u00e7izgi dekor' },
+  { value: 'academic', label: 'Akademik', desc: 'Numaral\u0131 hiyerar\u015fi' },
+  { value: 'minimal', label: 'Minimalist', desc: 'Sadece ba\u015fl\u0131k' },
 ]
+
+// Which chapter styles are available per document type
+const STYLES_PER_TYPE = {
+  book: ['classic', 'modern', 'academic', 'minimal'],
+  article: ['classic', 'modern', 'academic', 'minimal'],
+  report: ['classic', 'modern', 'academic', 'minimal'],
+  exam: ['classic', 'modern'],
+}
 
 function estimateTime(fileSize) {
   if (!fileSize) return '3-5 dakika';
@@ -45,6 +60,14 @@ function estimateTime(fileSize) {
   if (mb < 15) return '4-7 dakika';
   if (mb < 30) return '5-10 dakika';
   return '10-15 dakika';
+}
+
+// Document type display name map
+const DOC_TYPE_LABELS = {
+  book: 'Kitap',
+  article: 'Makale',
+  report: 'Rapor',
+  exam: 'S\u0131nav',
 }
 
 export default function NewProjectPage() {
@@ -62,6 +85,7 @@ export default function NewProjectPage() {
   const [fileUrl, setFileUrl] = useState(null)
 
   // Step 2: Settings
+  const [documentType, setDocumentType] = useState('book')
   const [projectName, setProjectName] = useState('')
   const [pageSize, setPageSize] = useState('a5paper')
   const [margins, setMargins] = useState('standard')
@@ -71,9 +95,9 @@ export default function NewProjectPage() {
   const [chapterStyle, setChapterStyle] = useState('classic')
   const [language, setLanguage] = useState('tr')
   const [features, setFeatures] = useState({
-    toc: true,
-    lof: true,
-    lot: true,
+    tableOfContents: true,
+    listOfFigures: true,
+    listOfTables: true,
     footnotes: true,
     bibliography: false,
     pageNumbers: true,
@@ -82,6 +106,11 @@ export default function NewProjectPage() {
     coverPage: false,
   })
 
+  // Exam-specific fields
+  const [examSchool, setExamSchool] = useState('')
+  const [examDate, setExamDate] = useState('')
+  const [examTitle, setExamTitle] = useState('')
+
   // Step 3: Cover
   const [coverTitle, setCoverTitle] = useState('')
   const [coverAuthor, setCoverAuthor] = useState('')
@@ -89,13 +118,43 @@ export default function NewProjectPage() {
   const [coverTemplateId, setCoverTemplateId] = useState('classic-serif')
   const [coverTemplates, setCoverTemplates] = useState([])
 
+  // Handle document type change — adjust features and style
+  const handleDocumentTypeChange = (type) => {
+    setDocumentType(type)
+
+    // Filter chapter style if current not available for new type
+    const availableStyles = STYLES_PER_TYPE[type] || STYLES_PER_TYPE.book
+    if (!availableStyles.includes(chapterStyle)) {
+      setChapterStyle(availableStyles[0])
+    }
+
+    // Adjust features based on type
+    if (type === 'exam') {
+      setFeatures(prev => ({
+        ...prev,
+        tableOfContents: false,
+        listOfFigures: false,
+        listOfTables: false,
+        bibliography: false,
+        coverPage: false,
+      }))
+      setPageSize('a4paper')
+    } else if (type === 'article') {
+      setFeatures(prev => ({
+        ...prev,
+        listOfFigures: false,
+        listOfTables: false,
+      }))
+    }
+  }
+
   // Fetch cover templates
   useEffect(() => {
     const apiBase = import.meta.env.VITE_API_URL || '/api'
     fetch(apiBase + '/covers/templates')
       .then(r => r.json())
       .then(d => { if (d.success) setCoverTemplates(d.data) })
-      .catch(() => { toast.error(t('wizard.coverTemplatesFailed') || 'Kapak şablonları yüklenemedi') })
+      .catch(() => { toast.error(t('wizard.coverTemplatesFailed') || 'Kapak \u015fablonlar\u0131 y\u00fcklenemedi') })
   }, [])
 
   // File upload
@@ -148,14 +207,45 @@ export default function NewProjectPage() {
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
   }
 
+  // Features that should be hidden for certain document types
+  const getVisibleFeatures = () => {
+    const allFeatures = [
+      { key: 'tableOfContents', label: t('wizard.toc') || '\u0130\u00e7indekiler' },
+      { key: 'listOfFigures', label: t('wizard.lof') || '\u015eekiller' },
+      { key: 'listOfTables', label: t('wizard.lot') || 'Tablolar' },
+      { key: 'footnotes', label: t('wizard.footnotes') || 'Dipnot Deste\u011fi' },
+      { key: 'bibliography', label: t('wizard.bibliographyBib') || 'Kaynak\u00e7a (BibTeX)' },
+      { key: 'pageNumbers', label: t('wizard.pageNumbers') },
+      { key: 'header', label: t('wizard.header') || '\u00dcst Bilgi' },
+      { key: 'footer', label: t('wizard.footer') || 'Alt Bilgi' },
+      { key: 'coverPage', label: t('wizard.coverPage') },
+    ]
+
+    if (documentType === 'exam') {
+      // Hide toc, lof, lot, bibliography, coverPage for exam
+      const hiddenKeys = ['tableOfContents', 'listOfFigures', 'listOfTables', 'bibliography', 'coverPage']
+      return allFeatures.filter(f => !hiddenKeys.includes(f.key))
+    }
+
+    return allFeatures
+  }
+
   // Submit
   const handleSubmit = async () => {
     setLoading(true)
     try {
       const settings = {
         pageSize, margins, fontFamily: font, fontSize, lineSpacing,
-        chapterStyle, language, features,
+        chapterStyle, language, documentType, features,
       }
+
+      // Add exam-specific fields
+      if (documentType === 'exam') {
+        settings.examSchool = examSchool
+        settings.examDate = examDate
+        settings.examTitle = examTitle
+      }
+
       const coverData = features.coverPage ? {
         templateId: coverTemplateId,
         title: coverTitle || projectName,
@@ -187,6 +277,11 @@ export default function NewProjectPage() {
     if (step === 2) return true
     return true
   }
+
+  // Get available chapter styles for current document type
+  const availableStyles = CHAPTER_STYLES.filter(cs =>
+    (STYLES_PER_TYPE[documentType] || STYLES_PER_TYPE.book).includes(cs.value)
+  )
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -225,10 +320,10 @@ export default function NewProjectPage() {
       {step === 0 && (
         <div>
           <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Dosyanızı yükleyin
+            Dosyan\u0131z\u0131 y\u00fckleyin
           </h2>
           <p className="mb-8" style={{ color: 'hsl(30, 10%, 45%)' }}>
-            Word (.docx) dosyanızı sürükleyip bırakın veya seçin.
+            Word (.docx) dosyan\u0131z\u0131 s\u00fcr\u00fckleyip b\u0131rak\u0131n veya se\u00e7in.
           </p>
 
           {!file ? (
@@ -245,10 +340,10 @@ export default function NewProjectPage() {
               <input {...getInputProps()} />
               <Upload className="w-10 h-10 mx-auto mb-4" style={{ color: 'hsl(30, 10%, 55%)' }} />
               <p className="text-lg font-medium mb-1">
-                {isDragActive ? 'Bırakın...' : 'DOCX dosyanızı sürükleyin'}
+                {isDragActive ? 'B\u0131rak\u0131n...' : 'DOCX dosyan\u0131z\u0131 s\u00fcr\u00fckleyin'}
               </p>
               <p className="text-sm" style={{ color: 'hsl(30, 10%, 55%)' }}>
-                veya dosya seçmek için tıklayın — Maks. 50MB
+                veya dosya se\u00e7mek i\u00e7in t\u0131klay\u0131n \u2014 Maks. 50MB
               </p>
             </div>
           ) : (
@@ -307,24 +402,88 @@ export default function NewProjectPage() {
       {step === 1 && (
         <div>
           <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Kitap ayarları
+            {t('wizard.step2Title')}
           </h2>
           <p className="mb-8" style={{ color: 'hsl(30, 10%, 45%)' }}>
             Dizgi tercihlerinizi belirleyin.
           </p>
 
           <div className="space-y-8">
+            {/* Document Type selector */}
+            <div>
+              <Label className="text-sm font-medium mb-3 block">{t('wizard.documentType') || 'Belge Tipi'}</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {DOCUMENT_TYPES.map((dt) => {
+                  const Icon = dt.icon
+                  return (
+                    <button
+                      key={dt.value}
+                      onClick={() => handleDocumentTypeChange(dt.value)}
+                      className="p-4 rounded-lg border text-left transition-all"
+                      style={{
+                        borderColor: documentType === dt.value ? 'hsl(25, 60%, 30%)' : 'hsl(35, 15%, 85%)',
+                        backgroundColor: documentType === dt.value ? 'hsl(35, 30%, 93%)' : 'hsl(40, 25%, 96%)',
+                      }}
+                    >
+                      <Icon className="w-5 h-5 mb-2" style={{ color: documentType === dt.value ? 'hsl(25, 60%, 30%)' : 'hsl(30, 10%, 55%)' }} />
+                      <p className="text-sm font-medium">{dt.label}</p>
+                      <p className="text-xs" style={{ color: 'hsl(30, 10%, 55%)' }}>{dt.desc}</p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
             {/* Project name */}
             <div>
-              <Label className="text-sm font-medium">Proje Adı</Label>
+              <Label className="text-sm font-medium">Proje Ad\u0131</Label>
               <Input
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
                 className="mt-2 h-11 rounded-lg"
                 style={{ backgroundColor: 'hsl(40, 25%, 96%)', borderColor: 'hsl(35, 15%, 85%)' }}
-                placeholder="Kitabınızın adı"
+                placeholder={documentType === 'exam' ? 'S\u0131nav ad\u0131' : 'Kitab\u0131n\u0131z\u0131n ad\u0131'}
               />
             </div>
+
+            {/* Exam-specific fields */}
+            {documentType === 'exam' && (
+              <div className="p-4 rounded-lg border space-y-4" style={{ borderColor: 'hsl(35, 15%, 85%)', backgroundColor: 'hsl(40, 30%, 97%)' }}>
+                <Label className="text-sm font-medium block">{t('wizard.examInfo') || 'S\u0131nav Bilgileri'}</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-xs" style={{ color: 'hsl(30, 10%, 55%)' }}>{t('wizard.examSchool') || 'Okul / Kurum Ad\u0131'}</Label>
+                    <Input
+                      value={examSchool}
+                      onChange={(e) => setExamSchool(e.target.value)}
+                      className="mt-1 h-10 rounded-lg"
+                      style={{ backgroundColor: 'hsl(40, 25%, 96%)', borderColor: 'hsl(35, 15%, 85%)' }}
+                      placeholder="\u00d6rn: ABC \u00dcniversitesi"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs" style={{ color: 'hsl(30, 10%, 55%)' }}>{t('wizard.examTitle') || 'Ders / S\u0131nav Ad\u0131'}</Label>
+                    <Input
+                      value={examTitle}
+                      onChange={(e) => setExamTitle(e.target.value)}
+                      className="mt-1 h-10 rounded-lg"
+                      style={{ backgroundColor: 'hsl(40, 25%, 96%)', borderColor: 'hsl(35, 15%, 85%)' }}
+                      placeholder="\u00d6rn: Matematik Vize S\u0131nav\u0131"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs" style={{ color: 'hsl(30, 10%, 55%)' }}>{t('wizard.examDate') || 'S\u0131nav Tarihi'}</Label>
+                    <Input
+                      value={examDate}
+                      onChange={(e) => setExamDate(e.target.value)}
+                      className="mt-1 h-10 rounded-lg"
+                      style={{ backgroundColor: 'hsl(40, 25%, 96%)', borderColor: 'hsl(35, 15%, 85%)' }}
+                      placeholder="\u00d6rn: 15 Mart 2026"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Page size */}
             <div>
@@ -389,7 +548,7 @@ export default function NewProjectPage() {
                 </div>
               </div>
               <div>
-                <Label className="text-sm font-medium mb-3 block">Satır Aralığı</Label>
+                <Label className="text-sm font-medium mb-3 block">Sat\u0131r Aral\u0131\u011f\u0131</Label>
                 <div className="flex gap-2">
                   {[1.0, 1.15, 1.5, 2.0].map((s) => (
                     <button
@@ -410,9 +569,9 @@ export default function NewProjectPage() {
 
             {/* Chapter style */}
             <div>
-              <Label className="text-sm font-medium mb-3 block">Bölüm Stili</Label>
+              <Label className="text-sm font-medium mb-3 block">B\u00f6l\u00fcm Stili</Label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {CHAPTER_STYLES.map((cs) => (
+                {availableStyles.map((cs) => (
                   <button
                     key={cs.value}
                     onClick={() => setChapterStyle(cs.value)}
@@ -434,8 +593,8 @@ export default function NewProjectPage() {
               <Label className="text-sm font-medium mb-3 block">Dil</Label>
               <div className="flex gap-3">
                 {[
-                  { value: 'tr', label: '🇹🇷 Türkçe' },
-                  { value: 'en', label: '🇬🇧 İngilizce' },
+                  { value: 'tr', label: '\ud83c\uddf9\ud83c\uddf7 T\u00fcrk\u00e7e' },
+                  { value: 'en', label: '\ud83c\uddec\ud83c\udde7 \u0130ngilizce' },
                 ].map((l) => (
                   <button
                     key={l.value}
@@ -454,19 +613,9 @@ export default function NewProjectPage() {
 
             {/* Features toggles */}
             <div>
-              <Label className="text-sm font-medium mb-3 block">Ek Özellikler</Label>
+              <Label className="text-sm font-medium mb-3 block">Ek \u00d6zellikler</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                {[
-                  { key: 'toc', label: 'İçindekiler' },
-                  { key: 'lof', label: 'Şekiller Listesi' },
-                  { key: 'lot', label: 'Tablolar Listesi' },
-                  { key: 'footnotes', label: 'Dipnot Desteği' },
-                  { key: 'bibliography', label: 'Kaynakça (BibTeX)' },
-                  { key: 'pageNumbers', label: t('wizard.pageNumbers') },
-                  { key: 'header', label: 'Üst Bilgi' },
-                  { key: 'footer', label: 'Alt Bilgi' },
-                  { key: 'coverPage', label: t('wizard.coverPage') },
-                ].map((f) => (
+                {getVisibleFeatures().map((f) => (
                   <button
                     key={f.key}
                     onClick={() => toggleFeature(f.key)}
@@ -555,10 +704,10 @@ export default function NewProjectPage() {
       {step === 3 && (
         <div>
           <h2 className="text-2xl font-bold mb-2" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Özet ve onay
+            \u00d6zet ve onay
           </h2>
           <p className="mb-8" style={{ color: 'hsl(30, 10%, 45%)' }}>
-            Ayarlarınızı gözden geçirin ve dizgiyi başlatın.
+            Ayarlar\u0131n\u0131z\u0131 g\u00f6zden ge\u00e7irin ve dizgiyi ba\u015flat\u0131n.
           </p>
 
           <div
@@ -566,15 +715,31 @@ export default function NewProjectPage() {
             style={{ borderColor: 'hsl(35, 15%, 88%)', backgroundColor: 'hsl(40, 25%, 96%)' }}
           >
             {[
+              [t('wizard.documentType') || 'Belge Tipi', DOC_TYPE_LABELS[documentType] || documentType],
               ['Proje', projectName],
               [t('wizard.step1Title'), file?.name],
               [t('wizard.pageSizeLabel'), PAGE_SIZES.find(p => p.value === pageSize)?.label],
               ['Font', FONTS.find(f => f.value === font)?.label + ' / ' + fontSize],
-              ['Satır Aralığı', lineSpacing.toString()],
-              ['Bölüm Stili', CHAPTER_STYLES.find(c => c.value === chapterStyle)?.label],
-              ['Dil', language === 'tr' ? 'Türkçe' : 'İngilizce'],
-              ['Özellikler', Object.entries(features).filter(([,v]) => v).map(([k]) => {
-                const map = { toc:t('wizard.toc'), lof:t('wizard.lof'), lot:t('wizard.lot'), footnotes:t('wizard.footnotes'), bibliography:t('wizard.bibliography'), pageNumbers:t('wizard.pageNumbers'), header:t('wizard.header'), footer:t('wizard.footer'), coverPage:t('wizard.coverPage') }
+              ['Sat\u0131r Aral\u0131\u011f\u0131', lineSpacing.toString()],
+              ['B\u00f6l\u00fcm Stili', CHAPTER_STYLES.find(c => c.value === chapterStyle)?.label],
+              ['Dil', language === 'tr' ? 'T\u00fcrk\u00e7e' : '\u0130ngilizce'],
+              ...(documentType === 'exam' ? [
+                [t('wizard.examSchool') || 'Okul', examSchool || '-'],
+                [t('wizard.examTitle') || 'S\u0131nav', examTitle || '-'],
+                [t('wizard.examDate') || 'Tarih', examDate || '-'],
+              ] : []),
+              ['\u00d6zellikler', Object.entries(features).filter(([,v]) => v).map(([k]) => {
+                const map = {
+                  tableOfContents: t('wizard.toc'),
+                  listOfFigures: t('wizard.lof'),
+                  listOfTables: t('wizard.lot'),
+                  footnotes: t('wizard.footnotes'),
+                  bibliography: t('wizard.bibliography'),
+                  pageNumbers: t('wizard.pageNumbers'),
+                  header: t('wizard.header'),
+                  footer: t('wizard.footer'),
+                  coverPage: t('wizard.coverPage')
+                }
                 return map[k] || k
               }).join(', ')],
             ].map(([label, value]) => (
@@ -589,7 +754,7 @@ export default function NewProjectPage() {
             className="mt-6 p-4 rounded-lg text-center text-sm"
             style={{ backgroundColor: 'hsl(35, 25%, 90%)', color: 'hsl(30, 10%, 40%)' }}
           >
-            ⏱ Tahmini işleme süresi: <strong>{estimateTime(file?.size)}</strong>
+            \u23f1 Tahmini i\u015fleme s\u00fcresi: <strong>{estimateTime(file?.size)}</strong>
           </div>
         </div>
       )}
@@ -603,7 +768,7 @@ export default function NewProjectPage() {
           style={{ borderColor: 'hsl(35, 15%, 80%)' }}
         >
           <ChevronLeft className="w-4 h-4 mr-1" />
-          {step === 0 ? 'İptal' : 'Geri'}
+          {step === 0 ? '\u0130ptal' : 'Geri'}
         </Button>
 
         {step < 3 ? (
@@ -612,7 +777,7 @@ export default function NewProjectPage() {
             disabled={!canNext()}
             className="rounded-full px-6 bg-stone-900 text-white hover:bg-stone-800"
           >
-            İleri
+            \u0130leri
             <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         ) : (
@@ -622,7 +787,7 @@ export default function NewProjectPage() {
             className="rounded-full px-8 bg-stone-900 text-white hover:bg-stone-800"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Rocket className="w-4 h-4 mr-2" />}
-            Dizgiyi Başlat
+            Dizgiyi Ba\u015flat
           </Button>
         )}
       </div>
