@@ -96,8 +96,8 @@ export default function NewProjectPage() {
   const [language, setLanguage] = useState('tr')
   const [features, setFeatures] = useState({
     tableOfContents: true,
-    listOfFigures: true,
-    listOfTables: true,
+    listOfFigures: false,
+    listOfTables: false,
     footnotes: true,
     bibliography: false,
     pageNumbers: true,

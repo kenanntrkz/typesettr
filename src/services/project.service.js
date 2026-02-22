@@ -13,8 +13,8 @@ const DEFAULT_SETTINGS = {
   documentType: 'book',
   features: {
     tableOfContents: true,
-    listOfFigures: true,
-    listOfTables: true,
+    listOfFigures: false,
+    listOfTables: false,
     footnotes: true,
     bibliography: false,
     pageNumbers: true,
