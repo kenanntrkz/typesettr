@@ -71,7 +71,7 @@ services:
   typesettr-redis:
     image: redis:7-alpine
     container_name: typesettr-redis
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --appendonly yes
+    command: redis-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
     ports:
       - "6380:6379"
     volumes:
