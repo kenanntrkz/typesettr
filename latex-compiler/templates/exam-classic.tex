@@ -1,0 +1,133 @@
+%% ═══════════════════════════════════════════════════════════
+%% TYPESETTR — exam-classic template
+%% Style: Classic exam/test paper (clean, formal, compact)
+%% Parametric placeholders: {{VARIABLE}}
+%% ═══════════════════════════════════════════════════════════
+
+\documentclass[{{FONT_SIZE}},oneside]{article}
+
+%% ── Encoding & Language ──────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[{{BABEL_LANG}}]{babel}
+
+%% ── Font ─────────────────────────────────────────────────
+{{FONT_PACKAGE}}
+
+%% ── Page Geometry (compact for exams) ────────────────────
+\usepackage[{{PAPER_SIZE}},top=15mm,bottom=15mm,left=20mm,right=20mm]{geometry}
+
+%% ── Line Spacing ─────────────────────────────────────────
+\usepackage{setspace}
+{{LINE_SPACING_CMD}}
+
+%% ── Microtypography ─────────────────────────────────────
+\usepackage{microtype}
+
+%% ── Last Page (for page count in footer) ─────────────────
+\usepackage{lastpage}
+
+%% ── Headers & Footers ────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textbf{{{EXAM_SCHOOL}}}}
+\fancyhead[R]{\small {{EXAM_DATE}}}
+\fancyfoot[C]{\small Sayfa \thepage/\pageref{LastPage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+%% First page style
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\small Sayfa \thepage/\pageref{LastPage}}%
+  \renewcommand{\headrulewidth}{0pt}%
+  \renewcommand{\footrulewidth}{0.4pt}%
+}
+
+%% ── Exam Header Block ────────────────────────────────────
+\newcommand{\examheader}{%
+  \begin{center}
+    \rule{\textwidth}{1.5pt}\[8pt]
+    {\Large\bfseries {{EXAM_SCHOOL}}}\[6pt]
+    {\large\bfseries {{EXAM_TITLE}}}\[6pt]
+    {\normalsize {{EXAM_DATE}}}\[8pt]
+    \rule{\textwidth}{1.5pt}
+  \end{center}
+  \vspace{4mm}
+}
+
+%% ── Section Style (for questions — unnumbered) ──────────
+\usepackage{titlesec}
+\setcounter{secnumdepth}{-1}
+
+\titleformat{\section}[block]
+  {\normalfont\large\bfseries}
+  {}
+  {0pt}
+  {}
+  [\vskip2pt\rule{\textwidth}{0.4pt}]
+\titlespacing*{\section}{0pt}{16pt}{8pt}
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries}{}{}{}
+\titlespacing*{\subsection}{0pt}{10pt}{4pt}
+
+%% ── Graphics & Floats ────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[font=small,labelfont=bf,justification=centering]{caption}
+\graphicspath{{images/}}
+
+%% ── Tables ───────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+
+%% ── Lists ────────────────────────────────────────────────
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.5em}
+
+%% ── Quotes ───────────────────────────────────────────────
+\usepackage{csquotes}
+
+%% ── Footnotes ────────────────────────────────────────────
+\usepackage[bottom,hang]{footmisc}
+\setlength{\footnotemargin}{0.8em}
+
+%% ── Signature Block ──────────────────────────────────────
+\newcommand{\signatureblock}{%
+  \vfill
+  {{EXAM_SIGNATURE_BLOCK}}
+}
+
+%% ── Index (optional) ─────────────────────────────────────
+{{INDEX_SETUP}}
+
+%% ── Bibliography (optional) ──────────────────────────────
+{{BIBLIOGRAPHY_SETUP}}
+
+%% ── PDF Metadata & Links (MUST be last) ──────────────────
+\usepackage[
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue!70!black,
+  bookmarks=true,
+  bookmarksnumbered=true,
+  pdfstartview=FitH
+]{hyperref}
+\hypersetup{
+  pdftitle={{{PDF_TITLE}}},
+  pdfauthor={{{PDF_AUTHOR}}}
+}
+\usepackage{bookmark}
+
+%% ── Title Page Data ──────────────────────────────────────
+\title{{{BOOK_TITLE}}}
+\author{{{BOOK_AUTHOR}}}
+\date{{{BOOK_DATE}}}
+
+%% ═════════════════════════════════════════════════════════
+%% END OF PREAMBLE — Content begins after \begin{document}
+%% ═════════════════════════════════════════════════════════

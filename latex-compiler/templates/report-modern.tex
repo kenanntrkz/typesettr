@@ -1,0 +1,128 @@
+%% ═══════════════════════════════════════════════════════════
+%% TYPESETTR — report-modern template
+%% Style: Modern report (color accents, clean, contemporary)
+%% ═══════════════════════════════════════════════════════════
+
+\documentclass[{{FONT_SIZE}},oneside]{report}
+
+%% ── Encoding & Language ──────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[{{BABEL_LANG}}]{babel}
+
+%% ── Font ─────────────────────────────────────────────────
+{{FONT_PACKAGE}}
+
+%% ── Page Geometry ────────────────────────────────────────
+\usepackage[{{PAPER_SIZE}},top={{MARGIN_TOP}},bottom={{MARGIN_BOTTOM}},left={{MARGIN_LEFT}},right={{MARGIN_RIGHT}}]{geometry}
+
+%% ── Line Spacing ─────────────────────────────────────────
+\usepackage{setspace}
+{{LINE_SPACING_CMD}}
+
+%% ── Microtypography ─────────────────────────────────────
+\usepackage{microtype}
+
+%% ── Color (for modern accents) ──────────────────────────
+\usepackage{xcolor}
+\definecolor{chaptercolor}{HTML}{2C3E50}
+\definecolor{rulecolor}{HTML}{BDC3C7}
+\definecolor{accentcolor}{HTML}{2980B9}
+
+%% ── Headers & Footers (minimal) ─────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{chaptercolor}\leftmark}
+\fancyhead[R]{\small\color{chaptercolor}\rightmark}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\small\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+%% ── Chapter Title Style (Modern: top rule + left-aligned) ─
+\usepackage{titlesec}
+\titleformat{\chapter}[block]
+  {\normalfont}
+  {}
+  {0pt}
+  {%
+    \color{rulecolor}\rule{\textwidth}{2pt}\vskip10pt%
+    {\color{chaptercolor}\small\MakeUppercase{\chaptertitlename}\ \thechapter}\vskip8pt%
+    {\color{chaptercolor}\LARGE\bfseries}%
+  }
+  [\vskip4pt{\color{rulecolor}\rule{\textwidth}{0.5pt}}]
+\titlespacing*{\chapter}{0pt}{0pt}{30pt}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{chaptercolor}}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{chaptercolor}}{\thesubsection}{1em}{}
+
+%% ── Table of Contents (clean) ───────────────────────────
+\usepackage{tocloft}
+\renewcommand{\cftchapfont}{\bfseries\color{chaptercolor}}
+\renewcommand{\cftsecfont}{\normalfont}
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
+\renewcommand{\cftchappagefont}{\bfseries\color{chaptercolor}}
+\setlength{\cftbeforechapskip}{6pt}
+\setlength{\cftbeforesecskip}{2pt}
+
+%% ── Graphics & Floats ────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[font=small,labelfont={bf,color=chaptercolor},justification=centering]{caption}
+\graphicspath{{images/}}
+
+%% ── Tables ───────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+
+%% ── Lists ────────────────────────────────────────────────
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.5em}
+\setlist[itemize]{label={\color{accentcolor}\textbullet}}
+
+%% ── Quotes ───────────────────────────────────────────────
+\usepackage{csquotes}
+
+%% ── Footnotes ────────────────────────────────────────────
+\usepackage[bottom,hang]{footmisc}
+\setlength{\footnotemargin}{0.8em}
+
+%% ── Index (optional) ─────────────────────────────────────
+{{INDEX_SETUP}}
+
+%% ── Bibliography (optional) ──────────────────────────────
+{{BIBLIOGRAPHY_SETUP}}
+
+%% ── PDF & Hyperlinks (LAST) ─────────────────────────────
+\usepackage[
+  colorlinks=true,
+  linkcolor=chaptercolor,
+  citecolor=chaptercolor,
+  urlcolor=accentcolor,
+  bookmarks=true,
+  bookmarksnumbered=true,
+  pdfstartview=FitH
+]{hyperref}
+\hypersetup{
+  pdftitle={{{PDF_TITLE}}},
+  pdfauthor={{{PDF_AUTHOR}}}
+}
+\usepackage{bookmark}
+
+%% ── Title Data ───────────────────────────────────────────
+\title{{{BOOK_TITLE}}}
+\author{{{BOOK_AUTHOR}}}
+\date{{{BOOK_DATE}}}
+
+%% ═════════════════════════════════════════════════════════
+%% END OF PREAMBLE
+%% ═════════════════════════════════════════════════════════

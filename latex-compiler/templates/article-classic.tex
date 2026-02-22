@@ -1,0 +1,119 @@
+%% ═══════════════════════════════════════════════════════════
+%% TYPESETTR — article-classic template
+%% Style: Traditional article formatting (serif, ruled headers)
+%% Parametric placeholders: {{VARIABLE}}
+%% ═══════════════════════════════════════════════════════════
+
+\documentclass[{{FONT_SIZE}},oneside]{article}
+
+%% ── Encoding & Language ──────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[{{BABEL_LANG}}]{babel}
+
+%% ── Font ─────────────────────────────────────────────────
+{{FONT_PACKAGE}}
+
+%% ── Page Geometry ────────────────────────────────────────
+\usepackage[{{PAPER_SIZE}},top={{MARGIN_TOP}},bottom={{MARGIN_BOTTOM}},left={{MARGIN_LEFT}},right={{MARGIN_RIGHT}}]{geometry}
+
+%% ── Line Spacing ─────────────────────────────────────────
+\usepackage{setspace}
+{{LINE_SPACING_CMD}}
+
+%% ── Microtypography (MUST load after fonts) ──────────────
+\usepackage{microtype}
+
+%% ── Headers & Footers ────────────────────────────────────
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape\leftmark}
+\fancyhead[R]{\small\itshape\rightmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+%% First page of sections: plain style
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+%% ── Section Title Styles (Classic Display) ───────────────
+\usepackage{titlesec}
+\titleformat{\section}[display]
+  {\normalfont\huge\bfseries}
+  {\thesection}
+  {20pt}
+  {\Huge}
+\titlespacing*{\section}{0pt}{50pt}{40pt}
+
+\titleformat{\subsection}
+  {\normalfont\Large\bfseries}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalfont\large\bfseries}{\thesubsubsection}{1em}{}
+
+%% ── Table of Contents ────────────────────────────────────
+\usepackage{tocloft}
+\renewcommand{\cftsecfont}{\bfseries}
+\renewcommand{\cftsubsecfont}{\normalfont}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\setlength{\cftbeforesecskip}{8pt}
+\setlength{\cftbeforesubsecskip}{2pt}
+
+%% ── Graphics & Floats ────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[font=small,labelfont=bf,justification=centering]{caption}
+\graphicspath{{images/}}
+
+%% ── Tables ───────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+
+%% ── Lists ────────────────────────────────────────────────
+\usepackage{enumitem}
+\setlist{nosep,leftmargin=1.5em}
+
+%% ── Quotes ───────────────────────────────────────────────
+\usepackage{csquotes}
+
+%% ── Footnotes ────────────────────────────────────────────
+\usepackage[bottom,hang]{footmisc}
+\setlength{\footnotemargin}{0.8em}
+
+%% ── Index (optional) ─────────────────────────────────────
+{{INDEX_SETUP}}
+
+%% ── Bibliography (optional) ──────────────────────────────
+{{BIBLIOGRAPHY_SETUP}}
+
+%% ── PDF Metadata & Links (MUST be last) ──────────────────
+\usepackage[
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue!70!black,
+  bookmarks=true,
+  bookmarksnumbered=true,
+  pdfstartview=FitH
+]{hyperref}
+\hypersetup{
+  pdftitle={{{PDF_TITLE}}},
+  pdfauthor={{{PDF_AUTHOR}}}
+}
+
+%% ── Bookmark fix (after hyperref) ────────────────────────
+\usepackage{bookmark}
+
+%% ── Title Page Data ──────────────────────────────────────
+\title{{{BOOK_TITLE}}}
+\author{{{BOOK_AUTHOR}}}
+\date{{{BOOK_DATE}}}
+
+%% ═════════════════════════════════════════════════════════
+%% END OF PREAMBLE — Content begins after \begin{document}
+%% ═════════════════════════════════════════════════════════
