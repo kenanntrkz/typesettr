@@ -124,4 +124,40 @@ router.post('/retry/:projectId', authenticate, async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/typeset/cancel/:projectId
+ * Cancel a running typesetting job
+ */
+router.post('/cancel/:projectId', authenticate, async (req, res, next) => {
+  try {
+    const { Project } = getModels();
+    const { projectId } = req.params;
+    const userId = req.user.id;
+
+    const project = await Project.findOne({
+      where: { id: projectId, user_id: userId }
+    });
+    if (!project) {
+      return res.status(404).json({ error: 'Proje bulunamadi' });
+    }
+    if (project.status !== 'processing') {
+      return res.status(400).json({ error: 'Sadece islenmekte olan projeler iptal edilebilir' });
+    }
+
+    await Project.update({
+      status: 'cancelled',
+      error_message: 'Islem kullanici tarafindan iptal edildi'
+    }, { where: { id: projectId } });
+
+    logger.info(`Typesetting cancelled: project ${projectId} by user ${userId}`);
+
+    res.json({
+      success: true,
+      message: 'Dizgi islemi iptal edildi'
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

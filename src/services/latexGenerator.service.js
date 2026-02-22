@@ -1,4 +1,15 @@
-// Faz 2 — LaTeX Generator Service (Template-based + Claude API for content)
+// Enhanced LaTeX Generator Service (Production-Ready)
+// ═══════════════════════════════════════════════════════════
+// Improvements:
+// 1. Deterministic table LaTeX generation (no AI for tables)
+// 2. Footnote → \footnote{} post-processing
+// 3. Blockquote → \begin{quote} post-processing
+// 4. Formatting markers (**bold**, *italic*, __underline__) in prompt
+// 5. Comprehensive figure placement ([H] forced)
+// 6. LaTeX environment validation (balanced begin/end)
+// 7. Endnote support
+// ═══════════════════════════════════════════════════════════
+
 const Anthropic = require('@anthropic-ai/sdk');
 const logger = require('../utils/logger');
 const { buildPreambleFromTemplate } = require('../utils/templateEngine');
@@ -17,62 +28,65 @@ function generatePreamble(plan, settings, coverData) {
 }
 
 /**
- * Generate LaTeX for a single chapter using Claude API
- * AI is only used for CONTENT conversion, not preamble/structure
+ * Generate LaTeX for a single chapter using Claude API.
+ * Tables are pre-generated deterministically, AI only handles text content.
  */
 async function generateChapterLatex(chapter, chapterIndex, plan, settings) {
   const chapterNum = chapterIndex + 1;
   logger.info(`Generating LaTeX for chapter ${chapterNum}: ${chapter.title}`);
 
-  const systemPrompt = `Sen uzman bir LaTeX içerik dönüştürücüsüsün. Verilen bölüm metnini temiz LaTeX koduna dönüştür.
+  const systemPrompt = `Sen uzman bir LaTeX icerik donusturucususun. Verilen bolum metnini temiz LaTeX koduna donustur.
 
-KRİTİK KURALLAR:
-1. \\chapter{Başlık} ile başla (bölüm numarasını sen ekleme, LaTeX otomatik numaralandırır)
-2. Alt başlıklar: \\section{...}, \\subsection{...}
-3. Paragraflar arasında boş satır bırak
-4. Görseller:
-   - Metin içinde [GORSEL: imgX] placeholder'ları göreceksin
-   - Her placeholder'ı, aşağıda verilen Görseller listesindeki doğru dosya adıyla \\includegraphics komutuyla değiştir
-   - KRİTİK: Görseli TAM OLARAK placeholder'ın bulunduğu yere koy, yerini DEĞİŞTİRME
+KRITIK KURALLAR:
+1. \\chapter{Baslik} ile basla (bolum numarasini sen ekleme, LaTeX otomatik numarandirir)
+2. Alt basliklar: \\section{...}, \\subsection{...}, \\subsubsection{...}
+3. Paragraflar arasinda bos satir birak
+4. Gorseller:
+   - Metin icinde [GORSEL: imgX] placeholder'lari goreceksin
+   - Her placeholder'i, asagida verilen Gorseller listesindeki dogru dosya adiyla \\includegraphics komutuyla degistir
+   - KRITIK: Gorseli TAM OLARAK placeholder'in bulundugu yere koy, yerini DEGISTIRME
    - Format (float KULLANMA, [H] ile tam yerinde tut):
    \\begin{figure}[H]
      \\centering
      \\includegraphics[width=0.7\\textwidth]{DOSYAADI}
    \\end{figure}
-   - caption ve label EKLEME — görselleri sade tut
-   - KRİTİK: DOSYAADI sadece dosya adı olmalı, "images/" prefix'i EKLEME (örn: img1.png, img2.jpg)
-   - graphicspath zaten ayarlı, sadece dosya adını yaz
-   - Görselin sırasını KORU: [GORSEL: img1] → img1.png, [GORSEL: img2] → img2.png vb.
+   - caption ve label EKLEME — gorselleri sade tut
+   - KRITIK: DOSYAADI sadece dosya adi olmali, "images/" prefix'i EKLEME
+   - graphicspath zaten ayarli, sadece dosya adini yaz
+   - Gorselin sirasini KORU: [GORSEL: img1] -> img1.png, [GORSEL: img2] -> img2.png vb.
 5. Tablolar:
-   \\begin{table}[htbp]
-     \\centering
-     \\caption{Başlık}
-     \\begin{tabular}{lcc}
-       \\toprule
-       ... \\\\
-       \\midrule
-       ... \\\\
-       \\bottomrule
-     \\end{tabular}
-   \\end{table}
-6. Dipnotlar: \\footnote{metin}
-7. Alıntılar: \\begin{quote}...\\end{quote}
-8. Kalın: \\textbf{...}, İtalik: \\textit{...}
+   - Metin icinde [TABLO: X] placeholder'lari ve hemen altinda hazir LaTeX kodu goreceksin
+   - Bu tablo LaTeX kodunu OLDUGU GIBI kullan, DEGISTIRME
+   - Tabloyu placeholder'in bulundugu yere koy
+6. Dipnotlar:
+   - Metin icinde [DIPNOT: X] marker'lari goreceksin
+   - Bu marker'lari \\footnote{metin} ile degistir. Dipnot metinleri asagida verilmis
+7. Alintilar:
+   - [ALINTI] ... [/ALINTI] bloklari goreceksin
+   - Bunlari \\begin{quote} ... \\end{quote} ile degistir
+8. METIN FORMATLAMA:
+   - **kalin metin** -> \\textbf{kalin metin}
+   - *italik metin* -> \\textit{italik metin}
+   - __altcizili metin__ -> \\underline{altcizili metin}
+   - ~~ustuCizili metin~~ -> \\sout{ustuCizili metin}
+   - ^{ust} -> \\textsuperscript{ust}
+   - _{alt} -> \\textsubscript{alt}
 9. Madde listeleri: \\begin{itemize} \\item ... \\end{itemize}
-10. Numaralı listeler: \\begin{enumerate} \\item ... \\end{enumerate}
+10. Numarali listeler: \\begin{enumerate} \\item ... \\end{enumerate}
+11. Madde listesi satirlari (- ile baslayanlar): \\begin{itemize} icinde \\item olarak yaz
 
-ÖZEL KARAKTER ESCAPELERİ:
-- & → \\&
-- % → \\%
-- $ → \\$
-- # → \\#
-- _ → \\_
-- AMA Türkçe karakterler (ç, ğ, ı, İ, ö, ş, ü, Ç, Ğ, Ö, Ş, Ü) DOĞRUDAN YAZILMALI, escape EDİLMEMELİ
+OZEL KARAKTER ESCAPE'LERI:
+- & -> \\&
+- % -> \\%
+- $ -> \\$
+- # -> \\#
+- _ -> \\_
+- AMA Turkce karakterler (c, g, i, I, o, s, u, C, G, O, S, U) DOGRUDAN YAZILMALI, escape EDILMEMELI
 
-ÇIKTI: Sadece bu bölümün LaTeX kodu.
-- \\chapter{...} ile başla
+CIKTI: Sadece bu bolumun LaTeX kodu.
+- \\chapter{...} ile basla
 - \\end{document} EKLEME
-- Açıklama, yorum, markdown EKLEME — sadece saf LaTeX kodu`;
+- Aciklama, yorum, markdown EKLEME — sadece saf LaTeX kodu`;
 
   // Handle split chapter continuations
   const isContinuation = chapter._continueChapter || false;
@@ -81,30 +95,56 @@ KRİTİK KURALLAR:
     : '';
 
   // Build content message
-  let contentParts = [`Bölüm ${chapterNum}:\nBaşlık: ${chapter.title}\n\nİçerik:\n${chapter.content || ''}`];
+  let contentParts = [`Bolum ${chapterNum}:\nBaslik: ${chapter.title}\n\nIcerik:\n${chapter.content || ''}`];
+
+  if (continuationNote) {
+    contentParts.unshift(continuationNote);
+  }
 
   if (chapter.subSections && chapter.subSections.length > 0) {
-    contentParts.push('\nAlt Başlıklar:');
+    contentParts.push('\nAlt Basliklar:');
     for (const sub of chapter.subSections) {
       contentParts.push(`\n--- ${sub.title} ---\n${sub.content || ''}`);
+      // Handle nested sub-sub-sections
+      if (sub.subSections && sub.subSections.length > 0) {
+        for (const subsub of sub.subSections) {
+          contentParts.push(`\n---- ${subsub.title} ----\n${subsub.content || ''}`);
+        }
+      }
     }
   }
 
   if (chapter.images && chapter.images.length > 0) {
-    contentParts.push('\nGörseller (bu bölüme ait, metin içinde uygun yerlere yerleştir):');
+    contentParts.push('\nGorseller (bu bolume ait, metin icinde uygun yerlere yerlestir):');
     for (const img of chapter.images) {
       const filename = img._resolvedName || `${img.id}.png`;
       const caption = img.caption || img.alt || '';
-      contentParts.push(`- Dosya: ${filename}, Açıklama: ${caption}`);
+      contentParts.push(`- Dosya: ${filename}, Aciklama: ${caption}`);
     }
   }
 
+  // Generate deterministic table LaTeX and include in content
   if (chapter.tables && chapter.tables.length > 0) {
-    contentParts.push(`\nTablolar:\n${JSON.stringify(chapter.tables, null, 2)}`);
+    contentParts.push('\nTablolar (asagidaki LaTeX kodlarini OLDUGU GIBI kullan, DEGISTIRME):');
+    chapter.tables.forEach((table, idx) => {
+      const tableLatex = generateTableLatex(table);
+      contentParts.push(`\n[TABLO ${idx + 1}]\n${tableLatex}[/TABLO]`);
+    });
   }
 
   if (chapter.footnotes && chapter.footnotes.length > 0) {
-    contentParts.push(`\nDipnotlar:\n${chapter.footnotes.map((fn, i) => `[${i + 1}] ${fn}`).join('\n')}`);
+    contentParts.push(`\nDipnotlar (metin icindeki [DIPNOT: X] marker'larini \\footnote{metin} ile degistir):`);
+    for (const fn of chapter.footnotes) {
+      contentParts.push(`[${fn.id}] ${fn.text}`);
+    }
+  }
+
+  // Endnotes
+  if (chapter._endnotes && chapter._endnotes.length > 0) {
+    contentParts.push(`\nSon Notlar (bolum sonuna ekle):`);
+    for (const en of chapter._endnotes) {
+      contentParts.push(`[${en.id}] ${en.text}`);
+    }
   }
 
   const userMessage = contentParts.join('\n');
@@ -122,22 +162,8 @@ KRİTİK KURALLAR:
     // Strip markdown code fences if AI wraps output
     latex = latex.replace(/^```(?:latex|tex)?\s*\n?/g, '').replace(/\n?```\s*$/g, '').trim();
 
-    // Post-process: fix image paths — remove images/ prefix if AI added it
-    latex = latex.replace(/\\includegraphics(\[[^\]]*\])?\{images\//g, '\\includegraphics$1{');
-
-    // Post-process: replace any remaining [GORSEL: imgX] placeholders that AI didn't handle
-    if (chapter.images && chapter.images.length > 0) {
-      for (const img of chapter.images) {
-        const filename = img._resolvedName || `${img.id}.png`;
-        const caption = img.caption || img.alt || '';
-        const placeholder = `[GORSEL: ${img.id}]`;
-        if (latex.includes(placeholder)) {
-          const figureBlock = `\\begin{figure}[H]\n  \\centering\n  \\includegraphics[width=0.7\\textwidth]{${filename}}\n\\end{figure}`;
-          latex = latex.replace(placeholder, figureBlock);
-          logger.info(`Replaced unreplaced placeholder ${placeholder} with figure block`);
-        }
-      }
-    }
+    // Apply deterministic post-processing
+    latex = postProcessChapterLatex(latex, chapter);
 
     logger.info(`Chapter ${chapterNum} LaTeX generated (${latex.length} chars)`);
     return latex;
@@ -145,6 +171,197 @@ KRİTİK KURALLAR:
     logger.error(`Chapter ${chapterNum} generation failed: ${error.message}`);
     return generateFallbackChapter(chapter, chapterIndex);
   }
+}
+
+/**
+ * Post-process AI-generated LaTeX for a single chapter.
+ * Handles: image paths, footnotes, quotes, figure placement, validation.
+ */
+function postProcessChapterLatex(latex, chapter) {
+  let result = latex;
+
+  // 1. Fix image paths — remove images/ prefix if AI added it
+  result = result.replace(/\\includegraphics(\[[^\]]*\])?\{images\//g, '\\includegraphics$1{');
+
+  // 2. Replace any remaining [GORSEL: imgX] placeholders that AI didn't handle
+  if (chapter.images && chapter.images.length > 0) {
+    for (const img of chapter.images) {
+      const filename = img._resolvedName || `${img.id}.png`;
+      const placeholder = `[GORSEL: ${img.id}]`;
+      if (result.includes(placeholder)) {
+        const figureBlock = `\\begin{figure}[H]\n  \\centering\n  \\includegraphics[width=0.7\\textwidth]{${filename}}\n\\end{figure}`;
+        result = result.replace(placeholder, figureBlock);
+        logger.info(`Post-process: replaced unreplaced placeholder ${placeholder}`);
+      }
+    }
+  }
+
+  // 3. Replace remaining footnote markers with \footnote{} commands
+  if (chapter.footnotes && chapter.footnotes.length > 0) {
+    for (const fn of chapter.footnotes) {
+      const marker = '[DIPNOT: ' + fn.id + ']';
+      if (result.includes(marker)) {
+        result = result.replace(marker, '\\footnote{' + escapeLatex(fn.text) + '}');
+        logger.info(`Post-process: replaced footnote marker [DIPNOT: ${fn.id}]`);
+      }
+    }
+  }
+
+  // 4. Convert remaining quote markers to LaTeX
+  result = result.replace(/\[ALINTI\]\n?([\s\S]*?)\n?\[\/ALINTI\]/g, '\\begin{quote}\n$1\n\\end{quote}');
+
+  // 5. Force ALL figures to [H] placement (comprehensive regex)
+  result = result.replace(/\\begin\{figure\}\[(?!H\])[^\]]*\]/g, '\\begin{figure}[H]');
+  result = result.replace(/\\begin\{figure\}(?!\[)/g, '\\begin{figure}[H]');
+
+  // 6. Convert remaining formatting markers that AI missed
+  result = result.replace(/\*\*([^*]+)\*\*/g, '\\textbf{$1}');
+  result = result.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '\\textit{$1}');
+  result = result.replace(/__([^_]+)__/g, '\\underline{$1}');
+  result = result.replace(/~~([^~]+)~~/g, '\\sout{$1}');
+
+  // 7. Clean up unreplaced markers
+  result = result.replace(/\[GORSEL:\s*\w+\]/g, '');
+  result = result.replace(/\[DIPNOT:\s*\d+\]/g, '');
+  result = result.replace(/\[TABLO:\s*\d+\]/g, '');
+
+  // 8. Validate balanced environments
+  const validation = validateEnvironments(result);
+  if (validation.errors.length > 0) {
+    logger.warn('LaTeX environment issues in chapter: ' + validation.errors.join('; '));
+    // Attempt auto-fix for common issues
+    result = autoFixEnvironments(result, validation);
+  }
+
+  return result;
+}
+
+/**
+ * Generate deterministic LaTeX for a table — no AI needed.
+ * Handles: colspan (multicolumn), rowspan (multirow), alignment, headers.
+ */
+function generateTableLatex(table) {
+  const { rows, colCount, hasHeaderRow } = table;
+  if (!rows || rows.length === 0 || colCount === 0) return '';
+
+  // Determine column alignments from first row
+  const alignments = [];
+  if (rows[0]) {
+    let col = 0;
+    for (const cell of rows[0]) {
+      const align = cell.align === 'center' ? 'c' : cell.align === 'right' ? 'r' : 'l';
+      for (let i = 0; i < cell.colspan; i++) {
+        alignments.push(align);
+        col++;
+      }
+    }
+  }
+  // Pad to colCount
+  while (alignments.length < colCount) alignments.push('l');
+
+  let latex = '\\begin{table}[H]\n  \\centering\n';
+  latex += `  \\begin{tabular}{${alignments.join('')}}\n`;
+  latex += '    \\toprule\n';
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const cells = [];
+
+    for (const cell of row) {
+      let text = escapeLatexTableCell(cell.text || '');
+      if (cell.isHeader) text = '\\textbf{' + text + '}';
+      if (cell.colspan > 1) {
+        const colAlign = cell.align === 'center' ? 'c' : cell.align === 'right' ? 'r' : 'l';
+        text = '\\multicolumn{' + cell.colspan + '}{' + colAlign + '}{' + text + '}';
+      }
+      if (cell.rowspan > 1) {
+        text = '\\multirow{' + cell.rowspan + '}{*}{' + text + '}';
+      }
+      cells.push(text);
+    }
+
+    latex += '    ' + cells.join(' & ') + ' \\\\\n';
+    if (i === 0 && hasHeaderRow) {
+      latex += '    \\midrule\n';
+    }
+  }
+
+  latex += '    \\bottomrule\n';
+  latex += '  \\end{tabular}\n';
+  latex += '\\end{table}\n';
+
+  return latex;
+}
+
+/**
+ * Escape special LaTeX characters for table cells.
+ * More conservative than full escapeLatex — preserves formatting markers.
+ */
+function escapeLatexTableCell(text) {
+  if (!text) return '';
+  return text
+    .replace(/\\/g, '\\textbackslash{}')
+    .replace(/&/g, '\\&')
+    .replace(/%/g, '\\%')
+    .replace(/\$/g, '\\$')
+    .replace(/#/g, '\\#')
+    .replace(/_/g, '\\_')
+    .replace(/\{/g, '\\{')
+    .replace(/\}/g, '\\}')
+    .replace(/~/g, '\\textasciitilde{}')
+    .replace(/\^/g, '\\textasciicircum{}');
+}
+
+/**
+ * Validate that LaTeX environments are properly balanced.
+ */
+function validateEnvironments(latex) {
+  const errors = [];
+  const stack = [];
+  const envRegex = /\\(begin|end)\{(\w+)\}/g;
+  let match;
+
+  while ((match = envRegex.exec(latex)) !== null) {
+    if (match[1] === 'begin') {
+      stack.push({ name: match[2], pos: match.index });
+    } else {
+      if (stack.length === 0) {
+        errors.push('Extra \\end{' + match[2] + '} at position ' + match.index);
+      } else {
+        const top = stack[stack.length - 1];
+        if (top.name === match[2]) {
+          stack.pop();
+        } else {
+          errors.push('Mismatched: \\begin{' + top.name + '} closed by \\end{' + match[2] + '}');
+        }
+      }
+    }
+  }
+
+  for (const env of stack) {
+    errors.push('Unclosed \\begin{' + env.name + '}');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Attempt to auto-fix common LaTeX environment issues.
+ */
+function autoFixEnvironments(latex, validation) {
+  let result = latex;
+
+  for (const error of validation.errors) {
+    // Fix unclosed environments by adding \end at the end
+    const unclosedMatch = error.match(/Unclosed \\begin\{(\w+)\}/);
+    if (unclosedMatch) {
+      const envName = unclosedMatch[1];
+      result += '\n\\end{' + envName + '}';
+      logger.info('Auto-fix: added missing \\end{' + envName + '}');
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -170,46 +387,18 @@ async function generateFullLatex(parsedDoc, plan, settings, coverData) {
   const features = settings.features || {};
   let doc = preamble + '\n\n\\begin{document}\n\n';
 
-  // Front matter
   doc += '\\frontmatter\n\n';
+  if (features.coverPage !== false) doc += '\\maketitle\n\\clearpage\n\n';
+  if (features.tableOfContents !== false) doc += '\\tableofcontents\n\\clearpage\n\n';
+  if (features.listOfFigures) doc += '\\listoffigures\n\\clearpage\n\n';
+  if (features.listOfTables) doc += '\\listoftables\n\\clearpage\n\n';
 
-  // Title page
-  if (features.coverPage !== false) {
-    doc += '\\maketitle\n\\clearpage\n\n';
-  }
-
-  // Table of contents
-  if (features.tableOfContents !== false) {
-    doc += '\\tableofcontents\n\\clearpage\n\n';
-  }
-
-  // List of figures
-  if (features.listOfFigures) {
-    doc += '\\listoffigures\n\\clearpage\n\n';
-  }
-
-  // List of tables
-  if (features.listOfTables) {
-    doc += '\\listoftables\n\\clearpage\n\n';
-  }
-
-  // Main matter
   doc += '\\mainmatter\n\n';
   doc += chapterLatexParts.join('\n\n');
 
-  // Back matter
   doc += '\n\n\\backmatter\n\n';
-
-  // Bibliography
-  if (features.bibliography) {
-    doc += '\\printbibliography\n\n';
-  }
-
-  // Index
-  if (features.index) {
-    doc += '\\printindex\n\n';
-  }
-
+  if (features.bibliography) doc += '\\printbibliography\n\n';
+  if (features.index) doc += '\\printindex\n\n';
   doc += '\\end{document}\n';
 
   logger.info(`Full LaTeX generated: ${doc.length} chars, ${chapterLatexParts.length} chapters`);
@@ -222,20 +411,22 @@ async function generateFullLatex(parsedDoc, plan, settings, coverData) {
 async function fixLatexErrors(latexCode, errorLog) {
   logger.info('Attempting AI-based LaTeX error fix...');
 
-  const systemPrompt = `Sen bir LaTeX hata düzeltme uzmanısın. Verilen LaTeX kodunda derleme hatası var.
+  const systemPrompt = `Sen bir LaTeX hata duzeltme uzmanisin. Verilen LaTeX kodunda derleme hatasi var.
 
-GÖREVİN:
+GOREVIN:
 1. Hata logunu analiz et
-2. Hatanın kök nedenini bul
-3. DÜZELTİLMİŞ kodun TAMAMINI üret
+2. Hatanin kok nedenini bul
+3. DUZELTILMIS kodun TAMAMI ni uret
 
 KURALLAR:
-- Sadece düzeltilmiş LaTeX kodunu döndür, açıklama ekleme
-- Kodun TAMAMINI ver, sadece değişen kısmı değil
-- Türkçe karakter sorunlarına özellikle dikkat et (UTF-8 encoding)
+- Sadece duzeltilmis LaTeX kodunu dondur, aciklama ekleme
+- Kodun TAMAMINI ver, sadece degisen kismi degil
+- Turkce karakter sorunlarina ozellikle dikkat et (UTF-8 encoding)
 - Eksik paketleri \\usepackage ile ekle
-- Kapanmamış ortamları kapat
-- Yanlış komut sözdizimlerini düzelt`;
+- Kapanmamis ortamlari kapat
+- Yanlis komut sozdizimlerini duzelt
+- \\sout komutu icin \\usepackage[normalem]{ulem} gerekir
+- \\multirow komutu icin \\usepackage{multirow} gerekir`;
 
   try {
     const response = await client.messages.create({
@@ -264,15 +455,59 @@ KURALLAR:
  * Fallback chapter generation (no AI, basic conversion)
  */
 function generateFallbackChapter(chapter, index) {
-  let latex = `\\chapter{${escapeLatex(chapter.title || 'Bölüm ' + (index + 1))}}\n\n`;
+  let latex = `\\chapter{${escapeLatex(chapter.title || 'Bolum ' + (index + 1))}}\n\n`;
 
   if (chapter.content) {
-    latex += escapeLatex(chapter.content) + '\n\n';
+    // Convert content with formatting markers
+    let content = chapter.content;
+
+    // Handle formatting markers
+    content = content.replace(/\*\*([^*]+)\*\*/g, '\\textbf{$1}');
+    content = content.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '\\textit{$1}');
+    content = content.replace(/__([^_]+)__/g, '\\underline{$1}');
+    content = content.replace(/~~([^~]+)~~/g, '\\sout{$1}');
+
+    // Handle quotes
+    content = content.replace(/\[ALINTI\]\n?([\s\S]*?)\n?\[\/ALINTI\]/g, '\\begin{quote}\n$1\n\\end{quote}');
+
+    // Handle footnotes
+    if (chapter.footnotes && chapter.footnotes.length > 0) {
+      for (const fn of chapter.footnotes) {
+        content = content.replace('[DIPNOT: ' + fn.id + ']', '\\footnote{' + escapeLatex(fn.text) + '}');
+      }
+    }
+
+    // Handle tables
+    if (chapter.tables && chapter.tables.length > 0) {
+      chapter.tables.forEach((table, idx) => {
+        const marker = '[TABLO: ' + (idx + 1) + ']';
+        const tableLatex = generateTableLatex(table);
+        content = content.replace(marker, tableLatex);
+      });
+    }
+
+    // Handle images
+    if (chapter.images && chapter.images.length > 0) {
+      for (const img of chapter.images) {
+        const filename = img._resolvedName || `${img.id}.png`;
+        const marker = '[GORSEL: ' + img.id + ']';
+        const figureBlock = `\\begin{figure}[H]\n  \\centering\n  \\includegraphics[width=0.7\\textwidth]{${filename}}\n\\end{figure}`;
+        content = content.replace(marker, figureBlock);
+      }
+    }
+
+    // Clean up remaining markers
+    content = content.replace(/\[GORSEL:\s*\w+\]/g, '');
+    content = content.replace(/\[DIPNOT:\s*\d+\]/g, '');
+    content = content.replace(/\[TABLO:\s*\d+\]/g, '');
+
+    latex += escapeLatex(content) + '\n\n';
   }
 
   if (chapter.subSections) {
     for (const section of chapter.subSections) {
-      latex += `\\section{${escapeLatex(section.title || '')}}\n\n`;
+      const sectionCmd = section.level === 3 ? '\\subsection' : '\\section';
+      latex += `${sectionCmd}{${escapeLatex(section.title || '')}}\n\n`;
       if (section.content) {
         latex += escapeLatex(section.content) + '\n\n';
       }
@@ -304,5 +539,6 @@ module.exports = {
   generatePreamble,
   generateChapterLatex,
   generateFullLatex,
+  generateTableLatex,
   fixLatexErrors
 };

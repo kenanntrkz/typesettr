@@ -37,6 +37,16 @@ const CHAPTER_STYLES = [
   { value: 'minimal', label: 'Minimalist', desc: 'Sadece başlık' },
 ]
 
+function estimateTime(fileSize) {
+  if (!fileSize) return '3-5 dakika';
+  const mb = fileSize / (1024 * 1024);
+  if (mb < 1) return '1-2 dakika';
+  if (mb < 5) return '2-4 dakika';
+  if (mb < 15) return '4-7 dakika';
+  if (mb < 30) return '5-10 dakika';
+  return '10-15 dakika';
+}
+
 export default function NewProjectPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -579,7 +589,7 @@ export default function NewProjectPage() {
             className="mt-6 p-4 rounded-lg text-center text-sm"
             style={{ backgroundColor: 'hsl(35, 25%, 90%)', color: 'hsl(30, 10%, 40%)' }}
           >
-            ⏱ Tahmini işleme süresi: <strong>3-5 dakika</strong>
+            ⏱ Tahmini işleme süresi: <strong>{estimateTime(file?.size)}</strong>
           </div>
         </div>
       )}
